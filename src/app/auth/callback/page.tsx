@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthShell } from "@/components/staff/auth-shell";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 /**
  * Landing page for links in Supabase's standard emails (staff invite, password reset).
- * Supabase sends the user here either with ?code=… or with #access_token=… — we turn
- * either into a signed-in session, then continue to `next` (default: set password).
+ * Supabase sends the user here with either ?code=… or #access_token=…&refresh_token=….
+ * The page hands those to /auth/session, which signs in on the server, then continues
+ * to `next` (default: choose a password).
  */
 export default function AuthCallbackPage() {
   const [failed, setFailed] = useState(false);
@@ -20,23 +20,32 @@ export default function AuthCallbackPage() {
     const next = url.searchParams.get("next") ?? "/staff/set-password";
     const safeNext = next.startsWith("/staff/") ? next : "/staff/set-password";
 
-    async function finishSignIn() {
-      if (url.searchParams.get("error") || hash.get("error")) return false;
-      const supabase = createSupabaseBrowserClient();
+    // Remove tokens from the address bar and browser history right away.
+    window.history.replaceState(null, "", url.pathname);
 
-      const code = url.searchParams.get("code");
-      if (code) return !(await supabase.auth.exchangeCodeForSession(code)).error;
+    const code = url.searchParams.get("code");
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
+    const payload = code ? { code } : accessToken && refreshToken ? { accessToken, refreshToken } : null;
 
-      const accessToken = hash.get("access_token");
-      const refreshToken = hash.get("refresh_token");
-      if (accessToken && refreshToken) {
-        return !(await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })).error;
+    const linkHasError = Boolean(url.searchParams.get("error") || hash.get("error"));
+
+    async function finishSignIn(): Promise<boolean> {
+      if (!payload || linkHasError) return false;
+      try {
+        const res = await fetch("/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        return res.ok;
+      } catch {
+        return false;
       }
-      return false;
     }
 
-    finishSignIn().then((ok) => {
-      // Full page load so the server sees the new session cookies.
+    void finishSignIn().then((ok) => {
+      // Full page load so the next page renders with the new session.
       if (ok) window.location.replace(safeNext);
       else setFailed(true);
     });
