@@ -40,7 +40,7 @@ function StoreCheckboxes({
           {stores.map((store) => (
             <label
               key={store.id}
-              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 text-sm has-checked:border-brand-blue has-checked:bg-secondary/60"
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-input bg-white px-3 text-sm transition-colors hover:border-brand-navy/60 has-checked:border-brand-blue has-checked:bg-secondary/60"
             >
               <input
                 type="checkbox"

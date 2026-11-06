@@ -22,7 +22,7 @@
   --muted: #eef1f6;
   --muted-foreground: #5b6578;
   --border: #e2e7ef;
-  --input: #d5dce7;
+  --input: #8a94a6; /* field borders: ≥3:1 contrast on white (WCAG 1.4.11) */
   --ring: #1b4596;
 
   /* Semantic */

@@ -57,7 +57,8 @@ export function Dialog({
           if (e.target === e.currentTarget) value.close();
         }}
         className={cn(
-          "m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-brand-navy-deep/50 backdrop:backdrop-blur-[2px]",
+          // text-left: a dialog must never inherit alignment from where its trigger sits (e.g. a right-aligned table cell).
+          "m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl border bg-card p-0 text-left text-card-foreground shadow-2xl backdrop:bg-brand-navy-deep/50 backdrop:backdrop-blur-[2px]",
           className,
         )}
       >

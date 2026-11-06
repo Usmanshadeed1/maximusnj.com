@@ -8,7 +8,7 @@ import type { ActionState } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
 
 const fieldBase =
-  "w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs transition-colors placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring/30 disabled:opacity-50 aria-invalid:border-destructive";
+  "w-full rounded-md border border-input bg-white px-3.5 text-[15px] text-foreground shadow-xs transition-[border-color,box-shadow] placeholder:text-muted-foreground hover:border-brand-navy/60 focus-visible:border-brand-blue focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-blue/20 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70 aria-invalid:border-destructive aria-invalid:ring-destructive/15";
 
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(fieldBase, "h-11", className)} {...props} />;
@@ -19,7 +19,7 @@ export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLS
 }
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("text-sm font-medium text-foreground", className)} {...props} />;
+  return <label className={cn("text-sm font-semibold text-foreground", className)} {...props} />;
 }
 
 /** Label + control + error message, wired together for accessibility. */
