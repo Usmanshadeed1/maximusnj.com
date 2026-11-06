@@ -6,9 +6,9 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 3 — Entrance check-in (kiosk)
-> **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
-> **Steps approved by owner:** 3 of 13 (Step 1: Manager/Staff login tests deferred until email is set up)
+> **Current step:** Step 4 — Transactions
+> **Status:** Not started — paused while the owner demos Steps 0–3 to the client
+> **Steps approved by owner:** 4 of 13 — Steps 0, 1, 2, 3 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
 >
 > *Developer: update this box and `PROGRESS_CHECKLIST.html` every time a step's status changes.*
