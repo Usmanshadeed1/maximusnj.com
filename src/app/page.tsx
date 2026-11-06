@@ -2,7 +2,6 @@ import Link from "next/link";
 import { LogIn, ScanLine, Ticket, TrendingUp } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { siteConfig } from "@/config/site";
 
@@ -29,8 +28,6 @@ const FEATURES = [
 ] as const;
 
 export default function HomePage() {
-  const isProduction = siteConfig.appEnv === "production";
-
   return (
     <main className="flex flex-1 flex-col">
       {/* Hero */}
@@ -48,17 +45,12 @@ export default function HomePage() {
         <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:pt-8">
           <Logo priority className="w-32 sm:w-44" />
           <div className="flex items-center gap-3">
-            {!isProduction && (
-              <Badge variant="accent" data-testid="env-badge" className="hidden sm:inline-flex">
-                {siteConfig.appEnv}
-              </Badge>
-            )}
             <Link
               href="/staff/login"
               className="inline-flex h-11 items-center gap-2 rounded-md border border-white/30 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-brand-yellow hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             >
               <LogIn aria-hidden className="size-4" />
-              Staff sign in
+              Log in
             </Link>
           </div>
         </header>
