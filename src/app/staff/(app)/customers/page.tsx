@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { IdCard, Search, UserPlus, X } from "lucide-react";
+import { IdCard, Search, UserPlus } from "lucide-react";
 import { CustomerList } from "@/components/customers/customer-list";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/page-header";
 import { requireEmployee } from "@/server/auth";
 import { getRecentCustomers, getStoreNameMap, searchCustomers } from "@/server/customers";
+import { CustomerSearch } from "./customer-search";
 
 export const metadata: Metadata = { title: "Customers" };
 
 export default async function CustomersPage({ searchParams }: PageProps<"/staff/customers">) {
   await requireEmployee();
-  const { q } = await searchParams;
+  const { q, open } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
 
   const [customers, storeNames] = await Promise.all([
@@ -21,8 +22,12 @@ export default async function CustomersPage({ searchParams }: PageProps<"/staff/
     getStoreNameMap(),
   ]);
 
-  // Scanning a card types the exact member number: open that profile straight away.
-  const exact = query ? customers.find((c) => c.member_number.toUpperCase() === query.toUpperCase()) : undefined;
+  // Pressing Enter (what a barcode scanner does) on an exact member number opens that profile.
+  // While typing, results only filter — so typing a full number never jumps to the wrong person.
+  const exact =
+    query && open === "1"
+      ? customers.find((c) => c.member_number.toUpperCase() === query.toUpperCase())
+      : undefined;
   if (exact) redirect(`/staff/customers/${exact.id}`);
 
   return (
@@ -37,36 +42,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/staff/
         }
       />
 
-      <form action="/staff/customers" role="search" className="mb-5 flex gap-2">
-        <label htmlFor="q" className="sr-only">
-          Search customers
-        </label>
-        <div className="relative flex-1">
-          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            id="q"
-            name="q"
-            type="search"
-            defaultValue={query}
-            autoFocus
-            autoComplete="off"
-            placeholder="Name, phone, email or member number"
-            className="h-12 w-full rounded-lg border border-input bg-white pr-10 pl-11 text-base shadow-xs transition-[border-color,box-shadow] placeholder:text-muted-foreground hover:border-brand-navy/60 focus-visible:border-brand-blue focus-visible:ring-4 focus-visible:ring-brand-blue/20 focus-visible:outline-none"
-          />
-          {query && (
-            <Link
-              href="/staff/customers"
-              aria-label="Clear search"
-              className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted"
-            >
-              <X className="size-4" />
-            </Link>
-          )}
-        </div>
-        <button type="submit" className={buttonVariants({ size: "lg", variant: "secondary", className: "h-12" })}>
-          Search
-        </button>
-      </form>
+      <CustomerSearch initialQuery={query} />
 
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between border-b px-4 py-3 sm:px-5">
