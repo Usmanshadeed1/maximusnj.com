@@ -57,6 +57,52 @@ export type AppSettingRow = {
   updated_at: string;
 }
 
+export type CustomerStatus = "active" | "inactive";
+export type CustomerSource = "staff" | "online" | "migration";
+
+export type CustomerRow = {
+  id: string;
+  member_number: string;
+  first_name: string;
+  last_name: string;
+  mobile_phone: string | null;
+  no_mobile: boolean;
+  email: string | null;
+  email_verified_at: string | null;
+  mobile_verified_at: string | null;
+  home_location_id: string;
+  status: CustomerStatus;
+  is_under_13: boolean;
+  age_13_confirmed: boolean;
+  created_via: CustomerSource;
+  created_by: string | null;
+  merged_into_id: string | null;
+  raffle_notify_prefs: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type DuplicateMatch = {
+  id: string;
+  member_number: string;
+  first_name: string;
+  last_name: string;
+  mobile_phone: string | null;
+  email: string | null;
+  status: CustomerStatus;
+  match_reasons: ("phone" | "email" | "name")[];
+};
+
+type CustomerFields = {
+  p_first_name: string;
+  p_last_name: string;
+  p_mobile: string | null;
+  p_no_mobile: boolean;
+  p_email: string | null;
+  p_home_location_id: string;
+  p_is_under_13: boolean;
+};
+
 type ReadOnlyTable<Row> = {
   Row: Row;
   Insert: Record<string, never>;
@@ -72,6 +118,7 @@ export type Database = {
       employee_locations: ReadOnlyTable<EmployeeLocationRow>;
       audit_logs: ReadOnlyTable<AuditLogRow>;
       app_settings: ReadOnlyTable<AppSettingRow>;
+      customers: ReadOnlyTable<CustomerRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -112,12 +159,42 @@ export type Database = {
         Args: { p_employee_id: string; p_location_ids: string[] };
         Returns: undefined;
       };
+      search_customers: {
+        Args: { p_query: string; p_limit?: number };
+        Returns: CustomerRow[];
+      };
+      find_customer_duplicates: {
+        Args: {
+          p_mobile: string | null;
+          p_email: string | null;
+          p_first_name: string;
+          p_last_name: string;
+          p_exclude_id?: string | null;
+        };
+        Returns: DuplicateMatch[];
+      };
+      register_customer: {
+        Args: CustomerFields;
+        Returns: CustomerRow;
+      };
+      update_customer: {
+        Args: CustomerFields & { p_id: string };
+        Returns: CustomerRow;
+      };
+      set_customer_status: {
+        Args: { p_id: string; p_status: CustomerStatus; p_reason?: string | null };
+        Returns: CustomerRow;
+      };
+      merge_customers: {
+        Args: { p_source_id: string; p_target_id: string; p_reason: string };
+        Returns: CustomerRow;
+      };
       bootstrap_owner: {
         Args: { p_user_id: string; p_first_name: string; p_last_name: string; p_email: string };
         Returns: EmployeeRow;
       };
     };
-    Enums: { employee_role: EmployeeRole };
+    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource };
     CompositeTypes: { [_ in never]: never };
   };
 };

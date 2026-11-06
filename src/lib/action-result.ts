@@ -26,6 +26,12 @@ const DB_MESSAGES: Record<string, string> = {
   last_owner: "There must always be at least one active Owner.",
   not_found: "That record no longer exists.",
   owner_exists: "An Owner account already exists.",
+  name_required: "First and last name are required.",
+  mobile_required: "Mobile number is required unless “No mobile number” is ticked.",
+  customer_merged: "This customer was merged into another record and can't be changed.",
+  member_number_immutable: "Member numbers can never be changed.",
+  merge_same_customer: "Choose a different member to keep.",
+  reason_required: "Please give a reason.",
 };
 
 /** Turns a Supabase/Postgres error into a message that's safe and clear for staff. */

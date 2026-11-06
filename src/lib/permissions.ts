@@ -52,6 +52,16 @@ export function canViewAuditLog(actor: EmployeeRole): boolean {
   return actor === "owner";
 }
 
+/** Owner and Managers mark customers active/inactive (§5.4). Every employee can edit contact details. */
+export function canChangeCustomerStatus(actor: EmployeeRole): boolean {
+  return actor === "owner" || actor === "manager";
+}
+
+/** Only the Owner merges duplicate customers (§5.4). */
+export function canMergeCustomers(actor: EmployeeRole): boolean {
+  return actor === "owner";
+}
+
 /** Managers and Staff must be assigned to at least one store; Owners work at every store. */
 export function requiresStore(role: EmployeeRole): boolean {
   return role !== "owner";

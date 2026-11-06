@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/page-header";
 import { THead, Table, Td, Th, Tr } from "@/components/ui/table";
 import { formatBusinessDateTime } from "@/lib/format";
+import { formatPhone } from "@/lib/phone";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireEmployee } from "@/server/auth";
 import type { AuditLogRow } from "@/types/database";
@@ -21,15 +22,46 @@ const ACTION_LABELS: Record<string, string> = {
   "employee.deactivate": "Employee deactivated",
   "employee.reactivate": "Employee reactivated",
   "employee.stores_change": "Stores changed",
+  "customer.create": "Customer registered",
+  "customer.update": "Customer edited",
+  "customer.status_change": "Customer status changed",
+  "customer.merge": "Customers merged",
+};
+
+const CUSTOMER_FIELD_LABELS: Record<string, string> = {
+  first_name: "first name",
+  last_name: "last name",
+  mobile_phone: "mobile phone",
+  no_mobile: "no mobile",
+  email: "email",
+  home_location_id: "home store",
+  is_under_13: "under 13",
 };
 
 type Json = AuditLogRow["after"];
 
 /** One short, human sentence describing what changed. */
-function describeChange(row: AuditLogRow, names: Map<string, string>, stores: Map<string, string>): string {
+function describeChange(
+  row: AuditLogRow,
+  names: Map<string, string>,
+  stores: Map<string, string>,
+  customers: Map<string, string>,
+): string {
   const before = (row.before ?? {}) as Record<string, Json>;
   const after = (row.after ?? {}) as Record<string, Json>;
-  const subject = row.entity_type === "employee" && row.entity_id ? names.get(row.entity_id) : undefined;
+  const subject =
+    row.entity_id && row.entity_type === "employee"
+      ? names.get(row.entity_id)
+      : row.entity_id && row.entity_type === "customer"
+        ? customers.get(row.entity_id)
+        : undefined;
+  const show = (key: string, value: Json): string => {
+    if (value === null || value === undefined || value === "") return "—";
+    if (key === "mobile_phone") return formatPhone(String(value));
+    if (key === "home_location_id") return stores.get(String(value)) ?? "another store";
+    if (typeof value === "boolean") return value ? "yes" : "no";
+    return String(value);
+  };
   const storeNames = (ids: Json) =>
     Array.isArray(ids) ? ids.map((id) => stores.get(String(id)) ?? "a hidden store").join(", ") || "none" : "";
 
@@ -52,6 +84,18 @@ function describeChange(row: AuditLogRow, names: Map<string, string>, stores: Ma
       );
       return `${String(after.name)}: ${changed.join(", ") || "no changes"}`;
     }
+    case "customer.create":
+      return `${String(after.first_name)} ${String(after.last_name)} (${String(after.member_number)})`;
+    case "customer.update": {
+      const changes = Object.keys(after).map(
+        (k) => `${CUSTOMER_FIELD_LABELS[k] ?? k}: ${show(k, before[k])} → ${show(k, after[k])}`,
+      );
+      return `${subject ?? "Customer"} — ${changes.join("; ")}`;
+    }
+    case "customer.status_change":
+      return `${subject ?? "Customer"}: ${String(before.status)} → ${String(after.status)}${row.reason ? ` (${row.reason})` : ""}`;
+    case "customer.merge":
+      return `${String(before.member_number)} merged into ${String(after.merged_into_member_number)}${row.reason ? ` (${row.reason})` : ""}`;
     default:
       return row.entity_id ?? "";
   }
@@ -70,6 +114,14 @@ export default async function AuditLogPage() {
   const names = new Map((employeesRes.data ?? []).map((e) => [e.id, `${e.first_name} ${e.last_name}`]));
   const stores = new Map((storesRes.data ?? []).map((s) => [s.id, s.name]));
   const logs = logsRes.data ?? [];
+
+  const customerIds = [
+    ...new Set(logs.filter((l) => l.entity_type === "customer" && l.entity_id).map((l) => l.entity_id as string)),
+  ];
+  const { data: customerRows } = customerIds.length
+    ? await supabase.from("customers").select("id, first_name, last_name").in("id", customerIds)
+    : { data: [] };
+  const customers = new Map((customerRows ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`]));
 
   return (
     <>
@@ -101,8 +153,14 @@ export default async function AuditLogPage() {
                   <Td className="whitespace-nowrap">
                     {row.actor_type === "system" ? "System" : (names.get(row.actor_id ?? "") ?? "Unknown")}
                   </Td>
-                  <Td className="font-medium whitespace-nowrap">{ACTION_LABELS[row.action] ?? row.action}</Td>
-                  <Td className="hidden text-muted-foreground md:table-cell">{describeChange(row, names, stores)}</Td>
+                  <Td>
+                    <p className="font-medium whitespace-nowrap">{ACTION_LABELS[row.action] ?? row.action}</p>
+                    {/* On phones the Details column is hidden, so show the details here. */}
+                    <p className="mt-0.5 text-xs text-muted-foreground md:hidden">
+                      {describeChange(row, names, stores, customers)}
+                    </p>
+                  </Td>
+                  <Td className="hidden text-muted-foreground md:table-cell">{describeChange(row, names, stores, customers)}</Td>
                 </Tr>
               ))}
             </tbody>

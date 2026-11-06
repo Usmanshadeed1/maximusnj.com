@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   canChangeActive,
+  canChangeCustomerStatus,
   canChangeRole,
+  canMergeCustomers,
   canEditStoresOf,
   canInvite,
   canManageLocations,
@@ -47,6 +49,16 @@ describe("store assignments", () => {
     expect(canEditStoresOf("manager", "staff")).toBe(true);
     expect(canEditStoresOf("manager", "manager")).toBe(false);
     expect(canEditStoresOf("staff", "staff")).toBe(false);
+  });
+});
+
+describe("customers", () => {
+  it("Owner and Manager change customer status; only Owner merges", () => {
+    expect(canChangeCustomerStatus("owner")).toBe(true);
+    expect(canChangeCustomerStatus("manager")).toBe(true);
+    expect(canChangeCustomerStatus("staff")).toBe(false);
+    expect(canMergeCustomers("owner")).toBe(true);
+    expect(canMergeCustomers("manager")).toBe(false);
   });
 });
 

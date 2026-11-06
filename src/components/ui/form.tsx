@@ -52,9 +52,38 @@ export function Field({
   );
 }
 
+/** Large, easy-to-tap checkbox with a title and optional explanation. */
+export function CheckboxField({
+  label,
+  description,
+  className,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & { label: string; description?: string }) {
+  return (
+    <label
+      className={cn(
+        "flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-input bg-white px-3.5 py-3 transition-colors hover:border-brand-navy/60 has-checked:border-brand-blue has-checked:bg-secondary/60 has-disabled:cursor-not-allowed has-disabled:opacity-60",
+        className,
+      )}
+    >
+      <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-brand-blue" {...props} />
+      <span className="flex flex-col">
+        <span className="text-sm font-semibold">{label}</span>
+        {description && <span className="text-xs text-muted-foreground">{description}</span>}
+      </span>
+    </label>
+  );
+}
+
 /** Submit button that disables itself and shows a spinner while the form is saving. */
-export function SubmitButton({ children, pendingText, ...props }: ButtonProps & { pendingText?: string }) {
-  const { pending } = useFormStatus();
+export function SubmitButton({
+  children,
+  pendingText,
+  pending: pendingOverride,
+  ...props
+}: ButtonProps & { pendingText?: string; pending?: boolean }) {
+  const status = useFormStatus();
+  const pending = pendingOverride ?? status.pending;
   return (
     <Button type="submit" disabled={pending || props.disabled} aria-busy={pending} {...props}>
       {pending && <Loader2 aria-hidden className="animate-spin" />}

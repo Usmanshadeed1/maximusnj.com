@@ -6,9 +6,9 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 1 — Stores, employees and staff login
-> **Status:** In progress
-> **Steps approved by owner:** 1 of 13
+> **Current step:** Step 2 — Customers and member numbers
+> **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
+> **Steps approved by owner:** 2 of 13 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
 >
 > *Developer: update this box and `PROGRESS_CHECKLIST.html` every time a step's status changes.*
