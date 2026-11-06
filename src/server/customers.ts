@@ -28,6 +28,49 @@ export async function getRecentCustomers(limit = 20): Promise<CustomerRow[]> {
   return data ?? [];
 }
 
+export type VisitSummary = {
+  recent: { id: string; checkedInAt: string; storeName: string; counted: boolean; qualifying: boolean }[];
+  /** Days this month (New York) that count toward the tier. */
+  qualifyingDaysThisMonth: number;
+};
+
+/** Recent visits plus this month's qualifying-day count for a customer profile. */
+export async function getVisitSummary(customerId: string): Promise<VisitSummary> {
+  const supabase = await createSupabaseServerClient();
+  const monthStart = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date()); // "2026-11"
+
+  const [recentRes, monthRes, storeNames] = await Promise.all([
+    supabase
+      .from("visits")
+      .select("id, checked_in_at, location_id, status, is_qualifying")
+      .eq("customer_id", customerId)
+      .order("checked_in_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("visits")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("is_qualifying", true)
+      .gte("local_date", `${monthStart}-01`),
+    getStoreNameMap(),
+  ]);
+
+  return {
+    recent: (recentRes.data ?? []).map((v) => ({
+      id: v.id,
+      checkedInAt: v.checked_in_at,
+      storeName: storeNames.get(v.location_id) ?? "Another store",
+      counted: v.status === "counted",
+      qualifying: v.is_qualifying,
+    })),
+    qualifyingDaysThisMonth: monthRes.count ?? 0,
+  };
+}
+
 export type CustomerDetail = CustomerRow & {
   homeStoreName: string;
   createdByName: string | null;

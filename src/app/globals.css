@@ -85,6 +85,27 @@
   --font-sans: var(--font-inter);
 }
 
+/* Kiosk: the result screen's "returning in 3 seconds" bar */
+@keyframes kiosk-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Kiosk: gentle pulse on the scan prompt */
+@keyframes kiosk-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 204 8 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 18px rgb(255 204 8 / 0);
+  }
+}
+
 @layer base {
   * {
     border-color: var(--border);

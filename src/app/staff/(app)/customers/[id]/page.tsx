@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, GitMerge, Pencil, Printer, UserPlus } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CheckCircle2, GitMerge, Pencil, Printer, ScanLine, UserPlus } from "lucide-react";
 import { CustomerBadges } from "@/components/customers/customer-badges";
 import { MemberCard } from "@/components/customers/member-card";
 import { TierBadge } from "@/components/tier-badge";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatBusinessDate } from "@/lib/format";
+import { formatBusinessDate, formatBusinessDateTime } from "@/lib/format";
 import { canChangeCustomerStatus, canMergeCustomers } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import { requireEmployee } from "@/server/auth";
-import { getCustomer } from "@/server/customers";
+import { getCustomer, getVisitSummary } from "@/server/customers";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
 
 export const metadata: Metadata = { title: "Customer" };
@@ -21,7 +22,7 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const customer = await getCustomer(id);
+  const [customer, visits] = await Promise.all([getCustomer(id), getVisitSummary(id)]);
   if (!customer) notFound();
 
   const name = `${customer.first_name} ${customer.last_name}`;
@@ -136,6 +137,42 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
               <p className="mt-4 rounded-md bg-secondary px-3 py-2.5 text-sm text-secondary-foreground">
                 Under 13 — contact details belong to a parent or guardian.
               </p>
+            )}
+          </Card>
+
+          <Card className="p-5 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-bold text-brand-navy-deep">Visits</h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+                <CalendarCheck aria-hidden className="size-3.5" />
+                {visits.qualifyingDaysThisMonth} {visits.qualifyingDaysThisMonth === 1 ? "day" : "days"} this month count toward tier
+              </span>
+            </div>
+            {visits.recent.length === 0 ? (
+              <div className="flex items-center gap-3 rounded-lg bg-muted/60 px-4 py-4 text-sm text-muted-foreground">
+                <ScanLine aria-hidden className="size-5 shrink-0" />
+                No visits yet. Visits appear here when the member scans in at the check-in kiosk.
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {visits.recent.map((visit) => (
+                  <li key={visit.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+                    <div>
+                      <p className="text-[15px] font-medium">{formatBusinessDateTime(visit.checkedInAt)}</p>
+                      <p className="text-sm text-muted-foreground">{visit.storeName}</p>
+                    </div>
+                    <span className="flex items-center gap-2">
+                      {visit.counted ? (
+                        <Badge variant={visit.qualifying ? "success" : "secondary"}>
+                          {visit.qualifying ? "Counts toward tier" : "Visit (already counted today)"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Repeat scan</Badge>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </Card>
 

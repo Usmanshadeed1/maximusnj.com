@@ -93,6 +93,28 @@ export type DuplicateMatch = {
   match_reasons: ("phone" | "email" | "name")[];
 };
 
+export type VisitStatus = "counted" | "duplicate";
+
+export type VisitRow = {
+  id: string;
+  customer_id: string;
+  location_id: string;
+  employee_id: string | null;
+  device_id: string | null;
+  checked_in_at: string;
+  local_date: string;
+  status: VisitStatus;
+  is_qualifying: boolean;
+  created_at: string;
+};
+
+/** What check_in returns — only what the kiosk is allowed to show. */
+export type CheckInResult =
+  | { result: "checked_in"; first_name: string; tier: string; qualifying: boolean }
+  | { result: "already_checked_in"; first_name: string; tier: string }
+  | { result: "not_found" }
+  | { result: "inactive" };
+
 type CustomerFields = {
   p_first_name: string;
   p_last_name: string;
@@ -119,6 +141,7 @@ export type Database = {
       audit_logs: ReadOnlyTable<AuditLogRow>;
       app_settings: ReadOnlyTable<AppSettingRow>;
       customers: ReadOnlyTable<CustomerRow>;
+      visits: ReadOnlyTable<VisitRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -189,12 +212,16 @@ export type Database = {
         Args: { p_source_id: string; p_target_id: string; p_reason: string };
         Returns: CustomerRow;
       };
+      check_in: {
+        Args: { p_member_number: string; p_location_id: string; p_device_id?: string | null };
+        Returns: CheckInResult;
+      };
       bootstrap_owner: {
         Args: { p_user_id: string; p_first_name: string; p_last_name: string; p_email: string };
         Returns: EmployeeRow;
       };
     };
-    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource };
+    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource; visit_status: VisitStatus };
     CompositeTypes: { [_ in never]: never };
   };
 };

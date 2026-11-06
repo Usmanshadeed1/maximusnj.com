@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isSupabaseConfigured, publicEnv } from "@/lib/env";
 
+/** Same name as KIOSK_COOKIE in src/server/kiosk-context.ts (that file is server-only). */
+const KIOSK_COOKIE = "mx_kiosk";
+
 /** Staff pages anyone may open without being signed in. */
 const PUBLIC_STAFF_PATHS = ["/staff/login", "/staff/forgot-password"];
 
@@ -38,6 +41,15 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/staff") && !isPublicStaffPath && !signedIn) {
     const url = request.nextUrl.clone();
     url.pathname = "/staff/login";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // A device in kiosk mode stays on the kiosk. Leaving needs staff credentials (§6).
+  const isKioskDevice = request.cookies.has(KIOSK_COOKIE);
+  if (isKioskDevice && pathname.startsWith("/staff") && !pathname.startsWith("/staff/kiosk") && !isPublicStaffPath) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/staff/kiosk";
     url.search = "";
     return NextResponse.redirect(url);
   }
