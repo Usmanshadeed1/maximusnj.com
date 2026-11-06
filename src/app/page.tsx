@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ScanLine, Ticket, TrendingUp } from "lucide-react";
+import { LogIn, ScanLine, Ticket, TrendingUp } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Badge } from "@/components/ui/badge";
@@ -44,18 +44,28 @@ export default function HomePage() {
           className="pointer-events-none absolute -bottom-48 -left-24 size-[22rem] rounded-full bg-brand-yellow/15 blur-3xl"
         />
 
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-6 pb-20 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:pt-8 lg:pb-28">
-          <div className="flex-1">
-            <div className="flex items-center justify-between lg:mb-20">
-              <Logo priority className="w-36 sm:w-44" />
-              {!isProduction && (
-                <Badge variant="accent" data-testid="env-badge">
-                  {siteConfig.appEnv}
-                </Badge>
-              )}
-            </div>
+        {/* Top bar: logo left, sign-in right */}
+        <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:pt-8">
+          <Logo priority className="w-32 sm:w-44" />
+          <div className="flex items-center gap-3">
+            {!isProduction && (
+              <Badge variant="accent" data-testid="env-badge" className="hidden sm:inline-flex">
+                {siteConfig.appEnv}
+              </Badge>
+            )}
+            <Link
+              href="/staff/login"
+              className="inline-flex h-11 items-center gap-2 rounded-md border border-white/30 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-brand-yellow hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+            >
+              <LogIn aria-hidden className="size-4" />
+              Staff sign in
+            </Link>
+          </div>
+        </header>
 
-            <div className="mt-14 lg:mt-0">
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-14 pb-20 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:pt-20 lg:pb-28">
+          <div className="flex-1">
+            <div>
               <p className="text-sm font-semibold tracking-[0.2em] text-brand-yellow uppercase">
                 Members Club · Coming soon
               </p>
@@ -136,15 +146,7 @@ export default function HomePage() {
       <footer className="mt-auto border-t bg-card">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <p>© {siteConfig.name}</p>
-          <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-4">
-            <p>Ask in store about joining the members club.</p>
-            <Link
-              href="/staff/login"
-              className="rounded-md px-2 py-1 font-medium text-muted-foreground underline-offset-4 hover:text-brand-blue hover:underline"
-            >
-              Staff sign in
-            </Link>
-          </div>
+          <p>Ask in store about joining the members club.</p>
         </div>
       </footer>
     </main>
