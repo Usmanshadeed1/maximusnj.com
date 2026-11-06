@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+/*
+ * Maximus design tokens.
+ * Brand colors are PLACEHOLDERS until the owner supplies exact codes (PROJECT_SCOPE.md §3.4).
+ * Change them here only — every component reads from these tokens.
+ */
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --brand-navy: #0b1f3a;
+  --brand-navy-deep: #06142a;
+  --brand-blue: #1e5aa8;
+  --brand-yellow: #ffc72c;
+
+  /* Surfaces & text */
+  --background: #f5f7fb;
+  --foreground: #0f1b2d;
+  --card: #ffffff;
+  --card-foreground: #0f1b2d;
+  --muted: #eef1f6;
+  --muted-foreground: #5b6578;
+  --border: #e2e7ef;
+  --input: #d5dce7;
+  --ring: #1e5aa8;
+
+  /* Semantic */
+  --primary: var(--brand-navy);
+  --primary-foreground: #ffffff;
+  --secondary: #e8eef8;
+  --secondary-foreground: var(--brand-navy);
+  --accent: var(--brand-yellow);
+  --accent-foreground: var(--brand-navy-deep);
+  --success: #1f9d55;
+  --success-foreground: #ffffff;
+  --destructive: #d93636;
+  --destructive-foreground: #ffffff;
+
+  /* Loyalty tiers */
+  --tier-base: #6b7385;
+  --tier-silver: #9aa6b8;
+  --tier-gold: #e0a800;
+  --tier-diamond: #3fa9f5;
+
+  --radius: 0.875rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-yellow: var(--brand-yellow);
+
+  --color-tier-base: var(--tier-base);
+  --color-tier-silver: var(--tier-silver);
+  --color-tier-gold: var(--tier-gold);
+  --color-tier-diamond: var(--tier-diamond);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-inter);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
