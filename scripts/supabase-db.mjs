@@ -1,7 +1,6 @@
 // Runs Supabase CLI database commands against the project in .env.local (SUPABASE_DB_URL).
 //
 //   npm run db:push    apply new migrations in supabase/migrations
-//   npm run db:test    run the database permission tests in supabase/tests (changes are rolled back)
 //   npm run db:types   regenerate src/types/database.ts from the live schema
 
 import { spawnSync } from "node:child_process";
@@ -19,13 +18,12 @@ if (!rawDbUrl) {
 }
 
 const args = {
-  push: ["db", "push", "--db-url", dbUrl],
-  test: ["test", "db", "--db-url", dbUrl],
+  push: ["db", "push", "--db-url", dbUrl, "--yes"],
   types: ["gen", "types", "typescript", "--db-url", dbUrl, "--schema", "public"],
 }[command];
 
 if (!args) {
-  console.error("Usage: node scripts/supabase-db.mjs <push|test|types>");
+  console.error("Usage: node scripts/supabase-db.mjs <push|types>");
   process.exit(1);
 }
 

@@ -36,7 +36,7 @@ if (!url || !serviceKey || !siteUrl) {
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
 const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-  redirectTo: `${siteUrl}/staff/set-password`,
+  redirectTo: `${siteUrl}/auth/callback`,
   data: { first_name: first, last_name: last },
 });
 if (inviteError || !invited.user) {

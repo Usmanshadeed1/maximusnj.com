@@ -37,7 +37,7 @@ export async function inviteEmployeeAction(_prev: ActionState, formData: FormDat
 
   const admin = createSupabaseAdminClient();
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(input.email, {
-    redirectTo: `${serverEnv().NEXT_PUBLIC_SITE_URL}/staff/set-password`,
+    redirectTo: `${serverEnv().NEXT_PUBLIC_SITE_URL}/auth/callback`,
     data: { first_name: input.firstName, last_name: input.lastName },
   });
   if (inviteError || !invited.user) {

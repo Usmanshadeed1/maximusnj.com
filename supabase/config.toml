@@ -245,15 +245,6 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Staff emails link to /auth/confirm (token_hash flow). Hosted project: paste the same HTML
-# into Supabase → Authentication → Emails.
-[auth.email.template.invite]
-subject = "You're invited to the Maximus staff app"
-content_path = "./supabase/templates/invite.html"
-
-[auth.email.template.recovery]
-subject = "Reset your Maximus staff password"
-content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

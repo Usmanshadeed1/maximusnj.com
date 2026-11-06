@@ -39,9 +39,8 @@ npm run dev                  # http://localhost:3000
 1. Fill in `.env.local` (see `.env.example`).
 2. `npm run db:push` creates the tables and security rules.
 3. In Supabase → **Authentication → URL Configuration**: set **Site URL** to the site address (e.g. `https://maximusnjcom.vercel.app`) and add `http://localhost:3000/**` to **Redirect URLs**.
-4. In Supabase → **Authentication → Emails**: paste `supabase/templates/invite.html` into **Invite user** and `supabase/templates/recovery.html` into **Reset password**, using the subjects written at the top of each file.
-5. `npm run bootstrap:owner -- --email you@example.com --first First --last Last`, then open the emailed link to set a password.
-6. On Vercel, add `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
+4. `npm run bootstrap:owner -- --email you@example.com --first First --last Last`, then open the emailed link to set a password.
+5. On Vercel, add `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Deploy (Vercel)
 
@@ -60,6 +59,5 @@ src/server/           server-only code: auth checks (auth.ts), store context, se
 src/proxy.ts          refreshes the login session and guards /staff routes
 supabase/migrations/  database tables, security rules (RLS) and functions
 supabase/tests/       database permission tests (pgTAP)
-supabase/templates/   auth email templates
 scripts/              one-off scripts (owner bootstrap, database commands)
 ```

@@ -48,7 +48,7 @@ export async function forgotPasswordAction(_prev: ActionState, formData: FormDat
 
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${serverEnv().NEXT_PUBLIC_SITE_URL}/staff/set-password`,
+    redirectTo: `${serverEnv().NEXT_PUBLIC_SITE_URL}/auth/callback`,
   });
 
   return {
