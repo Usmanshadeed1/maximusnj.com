@@ -2,17 +2,17 @@
 
 /*
  * Maximus design tokens.
- * Brand colors are PLACEHOLDERS until the owner supplies exact codes (PROJECT_SCOPE.md §3.4).
+ * Brand colors are taken from the official logo (public/brand/maximus-logo.png), PROJECT_SCOPE.md §3.4.
  * Change them here only — every component reads from these tokens.
  */
 :root {
   color-scheme: light;
 
-  /* Brand */
-  --brand-navy: #0b1f3a;
-  --brand-navy-deep: #06142a;
-  --brand-blue: #1e5aa8;
-  --brand-yellow: #ffc72c;
+  /* Brand (from logo) */
+  --brand-navy: #1e2e67; /* "collectibles" band */
+  --brand-navy-deep: #141543; /* logo shadow */
+  --brand-blue: #1b4596; /* letter outline */
+  --brand-yellow: #ffcc08; /* "MAXIMUS" letters */
 
   /* Surfaces & text */
   --background: #f5f7fb;
@@ -23,7 +23,7 @@
   --muted-foreground: #5b6578;
   --border: #e2e7ef;
   --input: #d5dce7;
-  --ring: #1e5aa8;
+  --ring: #1b4596;
 
   /* Semantic */
   --primary: var(--brand-navy);

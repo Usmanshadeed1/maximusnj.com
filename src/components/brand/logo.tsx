@@ -1,39 +1,22 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
+import logo from "../../../public/brand/maximus-logo.png";
 
 interface LogoProps {
   className?: string;
-  /** Use "light" on dark (navy) backgrounds. */
-  tone?: "light" | "dark";
+  /** Load eagerly when the logo is above the fold. */
+  priority?: boolean;
 }
 
-/** Text wordmark placeholder until the owner supplies the official logo file. */
-export function Logo({ className, tone = "dark" }: LogoProps) {
+/** Official Maximus Collectibles logo (transparent PNG). Size it with a width class, e.g. `w-40`. */
+export function Logo({ className, priority = false }: LogoProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span
-        aria-hidden
-        className="grid size-9 place-items-center rounded-lg bg-brand-yellow text-lg font-black text-brand-navy-deep shadow-sm"
-      >
-        M
-      </span>
-      <span className="flex flex-col leading-none">
-        <span
-          className={cn(
-            "text-base font-extrabold tracking-[0.14em]",
-            tone === "light" ? "text-white" : "text-brand-navy",
-          )}
-        >
-          MAXIMUS
-        </span>
-        <span
-          className={cn(
-            "text-[10px] font-semibold tracking-[0.32em]",
-            tone === "light" ? "text-brand-yellow" : "text-brand-blue",
-          )}
-        >
-          COLLECTIBLES
-        </span>
-      </span>
-    </span>
+    <Image
+      src={logo}
+      alt="Maximus Collectibles"
+      priority={priority}
+      sizes="(max-width: 640px) 50vw, 240px"
+      className={cn("h-auto w-40", className)}
+    />
   );
 }

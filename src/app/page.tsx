@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-brand-navy text-white">
+      <section className="relative overflow-hidden bg-brand-navy-deep text-white">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-40 -right-32 size-[28rem] rounded-full bg-brand-blue/40 blur-3xl"
@@ -46,7 +46,7 @@ export default function HomePage() {
         <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-6 pb-20 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:pt-8 lg:pb-28">
           <div className="flex-1">
             <div className="flex items-center justify-between lg:mb-20">
-              <Logo tone="light" />
+              <Logo priority className="w-36 sm:w-44" />
               {!isProduction && (
                 <Badge variant="accent" data-testid="env-badge">
                   {siteConfig.appEnv}
@@ -77,7 +77,7 @@ export default function HomePage() {
             >
               <div className="flex h-full flex-col justify-between">
                 <div className="flex items-start justify-between">
-                  <Logo tone="light" />
+                  <Logo className="w-28" />
                   <TierBadge tier="gold" />
                 </div>
                 <div>

@@ -137,7 +137,11 @@ Customer and staff logins are **separate screens and separate flows**, even thou
 The app must look and feel **premium, modern and polished**, like a top retail brand's app, not a basic admin template.
 
 - **Components:** **shadcn/ui** (accessible components built on Radix) + Tailwind + **lucide-react** icons. Build a small set of shared components first (Button, Input, Card, Table, Badge, Dialog, Toast, EmptyState, PageHeader) and reuse them everywhere.
-- **Brand:** navy, blue and yellow. Define them once as design tokens (CSS variables / Tailwind theme). The owner will supply the logo and exact color codes. Until then, use navy `#0B1F3A`, blue `#1E5AA8` and yellow `#FFC72C` as placeholders.
+- **Brand:** the official logo is `public/brand/maximus-logo.png` (transparent background); always use the `<Logo />` component, never re-draw it. The colors below are taken from the logo and defined once as design tokens in `src/app/globals.css`:
+  - yellow `#FFCC08` (the "MAXIMUS" letters)
+  - blue `#1B4596` (the letter outline)
+  - navy `#1E2E67` (the "collectibles" band)
+  - deep navy `#141543` (the logo shadow; used for dark headers)
 - **Tier colors and badges:** Base, Silver, Gold and Diamond each get a distinct, elegant badge style, used consistently everywhere.
 - **Typography:** one clean sans-serif font (e.g. Inter via `next/font`). Clear size hierarchy: page title, section title, body, small.
 - **Every screen has four states designed:** loading (skeletons, not blank screens), empty (friendly message plus the next action), error (plain-language message plus "Try again"), and success (toast or confirmation).
