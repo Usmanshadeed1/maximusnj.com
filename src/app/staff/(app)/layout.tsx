@@ -10,8 +10,7 @@ import { getSelectedStore } from "@/server/store-context";
 
 /** Shell for every signed-in staff page: sidebar, store switcher, user menu. */
 export default async function StaffAppLayout({ children }: { children: React.ReactNode }) {
-  const employee = await requireEmployee();
-  const store = await getSelectedStore();
+  const [employee, store] = await Promise.all([requireEmployee(), getSelectedStore()]);
 
   // Everyone works "at" a store. Owners may continue without one (e.g. to create the first store).
   if (!store && employee.role !== "owner") redirect("/staff/select-store");

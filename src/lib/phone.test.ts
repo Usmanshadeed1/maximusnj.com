@@ -24,7 +24,8 @@ describe("isValidPhone", () => {
 describe("formatPhone", () => {
   it("formats US numbers for display", () => {
     expect(formatPhone("2015550123")).toBe("(201) 555-0123");
-    expect(formatPhone("442079460958")).toBe("+442079460958");
+    expect(formatPhone("442079460958")).toBe("442079460958");
+    expect(formatPhone("03455116146")).toBe("03455116146");
     expect(formatPhone(null)).toBe("");
   });
 });

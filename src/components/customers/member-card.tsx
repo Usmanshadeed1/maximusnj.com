@@ -29,7 +29,7 @@ export function MemberCard({
         />
         <div className="relative flex items-start justify-between">
           <Logo className="w-[34cqw]" />
-          <TierBadge tier="base" className="px-[2.4cqw] py-[0.8cqw] text-[2.6cqw]" />
+          <TierBadge tier="base" tone="dark" className="px-[2.4cqw] py-[0.8cqw] text-[2.6cqw]" />
         </div>
         <div className="relative">
           <p className="truncate text-[4.4cqw] leading-tight font-bold">{name}</p>

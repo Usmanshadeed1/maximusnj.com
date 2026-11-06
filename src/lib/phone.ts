@@ -13,9 +13,9 @@ export function isValidPhone(digits: string): boolean {
   return /^\d{10,15}$/.test(digits);
 }
 
-/** "2015550123" → "(201) 555-0123". Other lengths are shown as stored. */
+/** "2015550123" → "(201) 555-0123". Other lengths are shown exactly as stored (digits only). */
 export function formatPhone(digits: string | null | undefined): string {
   if (!digits) return "";
   if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  return `+${digits}`;
+  return digits;
 }

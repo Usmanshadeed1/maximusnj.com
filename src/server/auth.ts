@@ -13,20 +13,23 @@ export type CurrentEmployee = {
 };
 
 /**
- * The signed-in, ACTIVE employee — or null. Verified with Supabase Auth on every request
- * (getUser contacts the auth server, so a revoked session is rejected). Cached per request.
+ * The signed-in, ACTIVE employee — or null. Cached per request.
+ *
+ * getClaims() verifies the session token's signature locally (no round trip to the auth
+ * server), which keeps every page fast. Access is still enforced immediately: the employees
+ * row is read on every request (and RLS checks it too), so a deactivated employee is
+ * rejected at once even while their token is still valid.
  */
 export const getCurrentEmployee = cache(async (): Promise<CurrentEmployee | null> => {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (!userId) return null;
 
   const { data: employee } = await supabase
     .from("employees")
     .select("id, first_name, last_name, email, role, is_active")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
 
   if (!employee || !employee.is_active) return null;

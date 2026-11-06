@@ -17,20 +17,25 @@ const DEFAULT_NAMES: Record<TierKey, string> = {
   diamond: "Diamond",
 };
 
+/** Base is grey; on a dark background (e.g. the member card) it needs a light version to stay readable. */
+const BASE_ON_DARK = "bg-white/15 text-white ring-white/40";
+
 interface TierBadgeProps {
   tier: TierKey;
   /** Display name from the Owner's tier settings; falls back to the default name. */
   label?: string;
+  /** Use "dark" when the badge sits on a navy/dark background. */
+  tone?: "light" | "dark";
   className?: string;
 }
 
 /** The single, consistent tier badge used everywhere (PROJECT_SCOPE.md §3.4). */
-export function TierBadge({ tier, label, className }: TierBadgeProps) {
+export function TierBadge({ tier, label, tone = "light", className }: TierBadgeProps) {
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 ring-inset",
-        TIER_STYLES[tier],
+        tone === "dark" && tier === "base" ? BASE_ON_DARK : TIER_STYLES[tier],
         className,
       )}
     >
