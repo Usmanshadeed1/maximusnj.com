@@ -1,0 +1,123 @@
+/**
+ * Database types for the Supabase client.
+ * Hand-written for Step 1. Once the project is linked, regenerate with:
+ *   npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" --schema public > src/types/database.ts
+ */
+
+export type EmployeeRole = "owner" | "manager" | "staff";
+
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+export type LocationRow = {
+  id: string;
+  name: string;
+  code: string;
+  address: string | null;
+  timezone: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmployeeRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: EmployeeRole;
+  is_active: boolean;
+  invited_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmployeeLocationRow = {
+  employee_id: string;
+  location_id: string;
+  created_at: string;
+}
+
+export type AuditLogRow = {
+  id: number;
+  actor_type: "employee" | "customer" | "system";
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  before: Json | null;
+  after: Json | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export type AppSettingRow = {
+  key: string;
+  value: Json;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+type ReadOnlyTable<Row> = {
+  Row: Row;
+  Insert: Record<string, never>;
+  Update: Record<string, never>;
+  Relationships: [];
+};
+
+export type Database = {
+  public: {
+    Tables: {
+      locations: ReadOnlyTable<LocationRow>;
+      employees: ReadOnlyTable<EmployeeRow>;
+      employee_locations: ReadOnlyTable<EmployeeLocationRow>;
+      audit_logs: ReadOnlyTable<AuditLogRow>;
+      app_settings: ReadOnlyTable<AppSettingRow>;
+    };
+    Views: { [_ in never]: never };
+    Functions: {
+      create_location: {
+        Args: { p_name: string; p_code: string; p_address?: string | null };
+        Returns: LocationRow;
+      };
+      update_location: {
+        Args: {
+          p_id: string;
+          p_name: string;
+          p_code: string;
+          p_address: string | null;
+          p_is_active: boolean;
+        };
+        Returns: LocationRow;
+      };
+      create_employee_record: {
+        Args: {
+          p_user_id: string;
+          p_first_name: string;
+          p_last_name: string;
+          p_email: string;
+          p_role: EmployeeRole;
+          p_location_ids: string[];
+        };
+        Returns: EmployeeRow;
+      };
+      set_employee_role: {
+        Args: { p_employee_id: string; p_role: EmployeeRole };
+        Returns: EmployeeRow;
+      };
+      set_employee_active: {
+        Args: { p_employee_id: string; p_is_active: boolean };
+        Returns: EmployeeRow;
+      };
+      set_employee_locations: {
+        Args: { p_employee_id: string; p_location_ids: string[] };
+        Returns: undefined;
+      };
+      bootstrap_owner: {
+        Args: { p_user_id: string; p_first_name: string; p_last_name: string; p_email: string };
+        Returns: EmployeeRow;
+      };
+    };
+    Enums: { employee_role: EmployeeRole };
+    CompositeTypes: { [_ in never]: never };
+  };
+};

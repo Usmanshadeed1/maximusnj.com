@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatBusinessDate, formatCents } from "./format";
+import { formatBusinessDate, formatBusinessDateTime, formatCents } from "./format";
+
+describe("formatBusinessDateTime", () => {
+  it("shows New York local time", () => {
+    // 21:05 UTC on Nov 6 (EST, UTC-5) is 4:05 PM in New York.
+    expect(formatBusinessDateTime("2026-11-06T21:05:00Z")).toMatch(/Nov 6, 2026,? 4:05\sPM/);
+  });
+});
 
 describe("formatCents", () => {
   it("formats integer cents as US dollars", () => {

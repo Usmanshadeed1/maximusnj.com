@@ -6,10 +6,10 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 0 — Project setup
-> **Status:** Ready for owner to test (owner pushes to GitHub and deploys on Vercel)
-> **Steps approved by owner:** 0 of 13
-> **Live app (staging):** not deployed yet
+> **Current step:** Step 1 — Stores, employees and staff login
+> **Status:** In progress
+> **Steps approved by owner:** 1 of 13
+> **Live app (staging):** https://maximusnjcom.vercel.app
 >
 > *Developer: update this box and `PROGRESS_CHECKLIST.html` every time a step's status changes.*
 

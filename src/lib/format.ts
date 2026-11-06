@@ -15,6 +15,19 @@ export function formatCents(cents: number): string {
   return usd.format(cents / 100);
 }
 
+/** Formats an instant as New York date and time, e.g. "Nov 6, 2026, 4:05 PM". */
+export function formatBusinessDateTime(value: Date | string): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 /** Formats an instant as a New York calendar date, e.g. "Nov 6, 2026". */
 export function formatBusinessDate(value: Date | string): string {
   const date = typeof value === "string" ? new Date(value) : value;
