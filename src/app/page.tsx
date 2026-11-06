@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ScanLine, Ticket, TrendingUp } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
@@ -135,7 +136,15 @@ export default function HomePage() {
       <footer className="mt-auto border-t bg-card">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <p>© {siteConfig.name}</p>
-          <p>Ask in store about joining the members club.</p>
+          <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-4">
+            <p>Ask in store about joining the members club.</p>
+            <Link
+              href="/staff/login"
+              className="rounded-md px-2 py-1 font-medium text-muted-foreground underline-offset-4 hover:text-brand-blue hover:underline"
+            >
+              Staff sign in
+            </Link>
+          </div>
         </div>
       </footer>
     </main>
