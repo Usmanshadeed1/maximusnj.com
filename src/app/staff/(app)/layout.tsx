@@ -23,7 +23,7 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
   if (canViewAuditLog(employee.role)) nav.push("audit");
 
   return (
-    <div className="flex min-h-dvh flex-1 flex-col lg:h-dvh lg:flex-row lg:overflow-hidden">
+    <div className="flex min-h-dvh flex-1 flex-col lg:h-dvh lg:flex-none lg:flex-row lg:overflow-hidden">
       <aside className="relative z-10 flex items-center justify-between bg-brand-navy-deep px-4 py-3 lg:h-full lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:flex-col lg:items-stretch lg:justify-start lg:gap-8 lg:px-4 lg:py-6">
         <Link href="/staff" aria-label="Staff dashboard" className="lg:px-2">
           <Logo className="w-28 lg:w-40" />
