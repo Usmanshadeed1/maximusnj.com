@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Steps 10 and 11 — Reports and audit log (built; owner to test) and Moving data from the old system (tools built and rehearsed; the real run waits for access to the old Supabase project). Steps 5 to 9 are also built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
+> **Current step:** Step 12 — Final checks and launch (everything that can be built is built; what remains is on the owner's side: see the list in the checklist). Step 11 (old data) is paused until the client says whether the old site holds real customers. Steps 5 to 10 are built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -715,6 +715,15 @@ Append-only. Each entry records the person who did it, the action, the entity, b
 - **Data retention:** records are kept indefinitely. The Owner can **export** a customer's data (JSON or CSV) or **delete or anonymize** it on request (audit-logged). ✅
 - **Ownership documentation:** a document listing who owns and has credentials for the domain, code repository, Vercel, Supabase, Resend, Twilio and Sentry, plus handoff and disaster-recovery documents.
 
+### 13.1 Step 12 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **Security headers** on every page: no framing, no content sniffing, HTTPS only (HSTS), minimal referrer, camera/microphone/location/payment switched off.
+- **Rate limits** now cover login codes, code entry, **online sign-up** (per connection) and **raffle entry** (per member).
+- **Data retention (§13):** the Owner can **download** everything held about a member (JSON; the PIN hash is never included) and **erase personal details**: name, phone, email, choices, PIN and online login (and the sign-in account) are removed, the member becomes inactive and can no longer be edited, and visits and sales stay under the member number. A reason and the typed member number are required, and both actions are audit-logged without the removed details. ⚠️ Older audit entries about that member (for example an earlier contact edit) are append-only and are not rewritten.
+- **`npm run launch:check`** (read only) answers "is this database ready for real customers?": test tools off, security rules on every table, no direct table access for visitors or signed-in users, the monthly job scheduled and its latest run succeeded, an Owner and a store exist, no obvious test members, https site address, production setting, email configured.
+- **Documents:** `docs/ADMIN_GUIDE.md` (training), `docs/UAT_CHECKLIST.md` (scope §17 mapped to the automated tests, plus manual checks), `docs/OWNERSHIP_AND_CREDENTIALS.md`, `docs/DEPLOY_AND_RECOVERY.md` (go-live, DNS, backups, restore test, rollback, monitoring).
+- **Not built, needs accounts or the owner:** the production Supabase/Vercel/DNS set-up, the email sender, Sentry error alerts, the demonstrated backup restore and rollback rehearsal, rotating secrets that were shared during the build, and moving the repository to a Maximus-owned account.
+
 ---
 
 ## 14. Data model (starting point 🔧)
@@ -1245,3 +1254,5 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 52 | Net purchases | Purchases minus refunds; trades, membership payments and adjustments are not sales; voided entries ignored |
 | 53 | Migration safety | Import is a dry run unless --apply; one transaction; totals checked before saving; refuses to save on any mismatch; never duplicates on re-run. Built in Step 11 |
 | 54 | Migration scope | Customers, visits and transactions are imported with their ids and legacy member numbers; paid memberships, old audit log and login links are archived; staff are re-invited; tiers are recalculated afterwards |
+| 55 | Step 11 paused | The old-system move is skipped for now; it is needed only if the old members site holds real customers. The tools stay ready (`npm run migrate`) |
+| 56 | Erasing a member | The Owner can download a member's data or erase their personal details (reason + typed member number); sales and visits stay under the member number |

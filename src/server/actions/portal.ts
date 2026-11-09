@@ -74,6 +74,10 @@ export async function memberSignUpAction(_prev: ActionState, formData: FormData)
   if (access.status === "member") redirect("/my");
   if (access.status !== "needs_signup") redirect("/my/help");
 
+  if (!(await withinLimit(`signup:ip:${await clientIp()}`, 20, HOUR))) {
+    return { error: "Too many tries from this connection. Please wait a little while and try again." };
+  }
+
   const parsed = signUpSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
@@ -144,6 +148,9 @@ async function raffleCall(raffleId: unknown, rpc: "portal_enter_raffle" | "porta
   if (access.status !== "member") return { error: "Please sign in again." };
   const id = z.uuid().safeParse(raffleId);
   if (!id.success) return { error: "That raffle is no longer available." };
+  if (!(await withinLimit(`raffle:${access.data.memberNumber}`, 30, 600))) {
+    return { error: "Too many tries. Please wait a few minutes and try again." };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc(rpc, { p_raffle_id: id.data });

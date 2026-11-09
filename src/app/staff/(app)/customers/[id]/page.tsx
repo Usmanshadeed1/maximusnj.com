@@ -27,6 +27,7 @@ import { getAwardHistory, isTestToolsEnabled } from "@/server/tier-awards";
 import { getCustomerTierView } from "@/server/tiers";
 import { getSpend, getTransactions } from "@/server/transactions";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
+import { PrivacyActions } from "./privacy-dialog";
 import { ActivityTimelineCard, RaffleHistoryCard } from "./history-cards";
 import { PortalAccessCard } from "./portal-access-card";
 import { SpendingCard, TransactionsCard } from "./spending-cards";
@@ -283,6 +284,9 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
                 <div className="mt-4 flex flex-wrap gap-2">
                   {canChangeCustomerStatus(employee.role) && (
                     <StatusDialog customerId={customer.id} name={name} status={customer.status} />
+                  )}
+                  {employee.role === "owner" && !customer.anonymized_at && (
+                    <PrivacyActions customerId={customer.id} name={name} memberNumber={customer.member_number} />
                   )}
                   {canMergeCustomers(employee.role) && (
                     <MergeCustomerDialog customerId={customer.id} name={name} memberNumber={customer.member_number} />

@@ -32,6 +32,8 @@ npm run dev                  # http://localhost:3000
 | `npm run db:push` | Apply new database migrations (`supabase/migrations`) to the project in `.env.local` |
 | `npm run db:test` | Database permission tests (`supabase/tests`); all changes are rolled back |
 | `npm run db:types` | Regenerate `src/types/database.ts` from the live database |
+| `npm run launch:check` | Read-only check that a database and its settings are ready for real customers |
+| `npm run migrate -- inventory` | Move data from the old system. Commands: inventory, backup, import, reconcile (Step 11; see PROJECT_SCOPE.md §16.1) |
 | `npm run bootstrap:owner -- --email … --first … --last …` | One-time: create the first Owner account |
 
 ## Supabase setup (once per project)

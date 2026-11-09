@@ -82,6 +82,7 @@ export type CustomerRow = {
   created_by: string | null;
   merged_into_id: string | null;
   raffle_notify_prefs: string[];
+  anonymized_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -738,6 +739,8 @@ export type Database = {
       cancel_raffle: { Args: { p_id: string; p_reason: string }; Returns: RaffleRow };
       staff_enter_raffle: { Args: { p_raffle_id: string; p_customer_id: string }; Returns: RaffleEntryRow };
       remove_raffle_entry: { Args: { p_entry_id: string; p_reason: string }; Returns: RaffleEntryRow };
+      export_customer_data: { Args: { p_customer_id: string }; Returns: Record<string, unknown> };
+      anonymize_customer: { Args: { p_customer_id: string; p_reason: string }; Returns: { auth_user_id: string | null } };
       report_dashboard: {
         Args: { p_from: string; p_to: string; p_location_id?: string | null };
         Returns: DashboardReport;
