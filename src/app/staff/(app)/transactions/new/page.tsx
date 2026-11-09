@@ -33,7 +33,7 @@ export default async function NewTransactionPage({ searchParams }: PageProps<"/s
     const name = `${customer.first_name} ${customer.last_name}`;
     if (customer.merged_into_id || customer.status !== "active") {
       return (
-        <div className="mx-auto w-full max-w-3xl">
+        <div className="w-full max-w-3xl">
           <Back href={PAGE} label="Choose a different member" />
           <PageHeader title="Record transaction" />
           <Card className="p-6 text-sm">
@@ -62,7 +62,7 @@ export default async function NewTransactionPage({ searchParams }: PageProps<"/s
     const now = new Date();
 
     return (
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="w-full max-w-3xl">
         <Back href={PAGE} label="Choose a different member" />
         <PageHeader title="Record transaction" description="Enter the amount, then pick what happened." />
 

@@ -13,7 +13,7 @@ export default async function NewCustomerPage() {
   const [stores, selected] = await Promise.all([getMyActiveStores(), getSelectedStore()]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="w-full max-w-3xl">
       <Link
         href="/staff/customers"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
