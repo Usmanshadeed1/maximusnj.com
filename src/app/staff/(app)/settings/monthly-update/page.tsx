@@ -43,7 +43,7 @@ export default async function MonthlyUpdatePage() {
     <div className="w-full max-w-4xl">
       <PageHeader
         title="Monthly tier update"
-        description="Every month the app decides each member's new tier by itself. You don't have to do anything — this page just shows that it is working."
+        description="Tiers are decided automatically on the 1st of each month."
       />
 
       <div className="flex flex-col gap-5">
@@ -111,31 +111,6 @@ export default async function MonthlyUpdatePage() {
           </div>
         </Card>
 
-        {/* How it works */}
-        <Card className="p-5 sm:p-6">
-          <div className="mb-4 flex items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-brand-blue">
-              <ListChecks aria-hidden className="size-5" />
-            </span>
-            <h2 className="pt-1.5 text-base font-bold text-brand-navy-deep">How it works</h2>
-          </div>
-          <ol className="flex list-decimal flex-col gap-2 pl-6 text-[15px]">
-            <li>
-              On the <strong>1st of every month at 12:05 AM</strong> (New York time) the app looks at what each member
-              spent and how often they visited <strong>last month</strong>.
-            </li>
-            <li>
-              It uses your <strong>Tier settings</strong> to decide their tier. That tier is theirs for the whole new
-              month. <strong>{monthLabel}</strong> activity decides <strong>{nextLabel}</strong>.
-            </li>
-            <li>
-              Members with no activity go back to the starting tier. New members start there too, until their first
-              update.
-            </li>
-            <li>If anything goes wrong, you&apos;ll see a red message here and on the dashboard, and the app tries again every hour.</li>
-          </ol>
-        </Card>
-
         {/* Recent updates */}
         <Card className="p-5 sm:p-6">
           <h2 className="mb-1 text-base font-bold text-brand-navy-deep">Recent updates</h2>
@@ -177,6 +152,31 @@ export default async function MonthlyUpdatePage() {
         </Card>
 
         {overview.testToolsEnabled && <TestToolsCard options={testOptions} />}
+
+        {/* How it works */}
+        <Card className="p-5 sm:p-6">
+          <div className="mb-4 flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-brand-blue">
+              <ListChecks aria-hidden className="size-5" />
+            </span>
+            <h2 className="pt-1.5 text-base font-bold text-brand-navy-deep">How it works</h2>
+          </div>
+          <ol className="flex list-decimal flex-col gap-2 pl-6 text-[15px]">
+            <li>
+              On the <strong>1st of every month at 12:05 AM</strong> (New York time) the app looks at what each member
+              spent and how often they visited <strong>last month</strong>.
+            </li>
+            <li>
+              It uses your <strong>Tier settings</strong> to decide their tier. That tier is theirs for the whole new
+              month. <strong>{monthLabel}</strong> activity decides <strong>{nextLabel}</strong>.
+            </li>
+            <li>
+              Members with no activity go back to the starting tier. New members start there too, until their first
+              update.
+            </li>
+            <li>If anything goes wrong, you&apos;ll see a red message here and on the dashboard, and the app tries again every hour.</li>
+          </ol>
+        </Card>
       </div>
     </div>
   );
