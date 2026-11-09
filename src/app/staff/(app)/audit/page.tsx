@@ -3,7 +3,8 @@ import { History } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/page-header";
 import { THead, Table, Td, Th, Tr } from "@/components/ui/table";
-import { formatBusinessDateTime } from "@/lib/format";
+import { formatBusinessDate, formatBusinessDateTime, formatCents } from "@/lib/format";
+import { TRANSACTION_TYPE_INFO } from "@/lib/transactions";
 import { formatPhone } from "@/lib/phone";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireEmployee } from "@/server/auth";
@@ -28,6 +29,9 @@ const ACTION_LABELS: Record<string, string> = {
   "customer.update": "Customer edited",
   "customer.status_change": "Customer status changed",
   "customer.merge": "Customers merged",
+  "transaction.adjustment": "Adjustment recorded",
+  "transaction.backdated": "Back-dated entry",
+  "transaction.void": "Transaction voided",
 };
 
 const CUSTOMER_FIELD_LABELS: Record<string, string> = {
@@ -79,6 +83,20 @@ function describeChange(
       return subject ?? "";
     case "employee.stores_change":
       return `${subject}: ${storeNames(before.location_ids)} → ${storeNames(after.location_ids)}`;
+    case "transaction.adjustment":
+    case "transaction.backdated":
+    case "transaction.void": {
+      const d = (row.action === "transaction.void" ? before : after) as Record<string, Json>;
+      const who = customers.get(String(d.customer_id)) ?? "Customer";
+      const kind = TRANSACTION_TYPE_INFO[d.type as keyof typeof TRANSACTION_TYPE_INFO]?.label ?? String(d.type);
+      const amount = formatCents(Number(d.amount_cents));
+      if (row.action === "transaction.void") return `${who}: ${kind} ${amount} voided${row.reason ? ` — ${row.reason}` : ""}`;
+      if (row.action === "transaction.adjustment") {
+        const counted = d.counts_toward_tier ? "counts toward tier" : "history only";
+        return `${who}: ${String(d.adjustment_direction)} ${amount} (${counted})${row.reason ? ` — ${row.reason}` : ""}`;
+      }
+      return `${who}: ${kind} ${amount}, dated ${formatBusinessDate(String(d.occurred_at))}${d.closed_month ? " (past month)" : ""}`;
+    }
     case "location.delete":
       return `${String(before.name)} (${String(before.code)})`;
     case "location.create":
@@ -121,7 +139,17 @@ export default async function AuditLogPage() {
   const logs = logsRes.data ?? [];
 
   const customerIds = [
-    ...new Set(logs.filter((l) => l.entity_type === "customer" && l.entity_id).map((l) => l.entity_id as string)),
+    ...new Set(
+      logs.flatMap((l) => {
+        if (!l.entity_id) return [];
+        if (l.entity_type === "customer") return [l.entity_id];
+        if (l.entity_type === "transaction") {
+          const details = (l.after ?? l.before) as { customer_id?: string } | null;
+          return details?.customer_id ? [details.customer_id] : [];
+        }
+        return [];
+      }),
+    ),
   ];
   const { data: customerRows } = customerIds.length
     ? await supabase.from("customers").select("id, first_name, last_name").in("id", customerIds)

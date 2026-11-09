@@ -9,11 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatBusinessDate, formatBusinessDateTime } from "@/lib/format";
-import { canChangeCustomerStatus, canMergeCustomers } from "@/lib/permissions";
+import { canChangeCustomerStatus, canMergeCustomers, canVoidTransactions } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import { requireEmployee } from "@/server/auth";
 import { getCustomer, getVisitSummary } from "@/server/customers";
+import { getSpend, getTransactions } from "@/server/transactions";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
+import { SpendingCard, TransactionsCard } from "./spending-cards";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -22,7 +24,12 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const [customer, visits] = await Promise.all([getCustomer(id), getVisitSummary(id)]);
+  const [customer, visits, spend, transactions] = await Promise.all([
+    getCustomer(id),
+    getVisitSummary(id),
+    getSpend(id),
+    getTransactions(id),
+  ]);
   if (!customer) notFound();
 
   const name = `${customer.first_name} ${customer.last_name}`;
@@ -65,6 +72,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
       )}
       {flags.saved === "1" && <Notice>Changes saved.</Notice>}
       {flags.merged === "1" && <Notice>Duplicate merged into this member.</Notice>}
+      {flags.recorded === "1" && <Notice>Transaction recorded.</Notice>}
 
       {isMerged && customer.mergedInto && (
         <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-900">
@@ -103,6 +111,16 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
               )}
             </div>
           </Card>
+
+          <SpendingCard spend={spend} />
+
+          <TransactionsCard
+            transactions={transactions}
+            customerId={customer.id}
+            recordHref={`/staff/transactions/new?customer=${customer.id}`}
+            canVoid={canVoidTransactions(employee.role)}
+            canRecord={!isMerged && customer.status === "active"}
+          />
 
           <Card className="p-5 sm:p-6">
             <h2 className="mb-4 text-base font-bold text-brand-navy-deep">Details</h2>

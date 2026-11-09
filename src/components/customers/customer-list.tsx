@@ -6,7 +6,16 @@ import type { CustomerRow } from "@/types/database";
 import { CustomerBadges } from "./customer-badges";
 
 /** Customer results: a table on tablet/desktop, tappable cards on phones. */
-export function CustomerList({ customers, storeNames }: { customers: CustomerRow[]; storeNames: Map<string, string> }) {
+export function CustomerList({
+  customers,
+  storeNames,
+  hrefFor = (c) => `/staff/customers/${c.id}`,
+}: {
+  customers: CustomerRow[];
+  storeNames: Map<string, string>;
+  /** Where each row links to. Defaults to the customer's profile. */
+  hrefFor?: (customer: CustomerRow) => string;
+}) {
   return (
     <>
       {/* Phone */}
@@ -14,7 +23,7 @@ export function CustomerList({ customers, storeNames }: { customers: CustomerRow
         {customers.map((c) => (
           <li key={c.id}>
             <Link
-              href={`/staff/customers/${c.id}`}
+              href={hrefFor(c)}
               className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/60"
             >
               <div className="min-w-0 flex-1">
@@ -70,7 +79,7 @@ export function CustomerList({ customers, storeNames }: { customers: CustomerRow
                 <Td>
                   {/* The link covers the whole row, so any click opens the profile. */}
                   <Link
-                    href={`/staff/customers/${c.id}`}
+                    href={hrefFor(c)}
                     className="font-semibold after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
                   >
                     {c.first_name} {c.last_name}

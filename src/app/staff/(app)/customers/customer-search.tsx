@@ -10,7 +10,14 @@ const DEBOUNCE_MS = 250;
  * Live search: results update as you type (debounced). Pressing Enter — which is what a
  * barcode scanner does after typing the member number — opens an exact match directly.
  */
-export function CustomerSearch({ initialQuery }: { initialQuery: string }) {
+export function CustomerSearch({
+  initialQuery,
+  basePath = "/staff/customers",
+}: {
+  initialQuery: string;
+  /** The page the results are shown on. */
+  basePath?: string;
+}) {
   const router = useRouter();
   const [value, setValue] = useState(initialQuery);
   const [isPending, startTransition] = useTransition();
@@ -23,7 +30,7 @@ export function CustomerSearch({ initialQuery }: { initialQuery: string }) {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (open && query) params.set("open", "1");
-    const href = params.size ? `/staff/customers?${params}` : "/staff/customers";
+    const href = params.size ? `${basePath}?${params}` : basePath;
     startTransition(() => router.replace(href, { scroll: false }));
   };
 

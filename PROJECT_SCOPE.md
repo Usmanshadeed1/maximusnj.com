@@ -7,7 +7,7 @@ Version 2.0 · 2026-11-06
 
 > ### 📍 CURRENT STATUS
 > **Current step:** Step 4 — Transactions
-> **Status:** Not started — paused while the owner demos Steps 0–3 to the client
+> **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 4 of 13 — Steps 0, 1, 2, 3 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
 >
@@ -386,6 +386,17 @@ During the current month, the staff app and the portal show:
   - recent transactions
   - the store for each transaction
 - **No Shopify dependency.**
+- **Step 4 decisions where this section was silent 🔧** (change with the owner's OK):
+  - **Who records what:** Staff record purchases, refunds and trades. Owner and Managers also record membership payments and manual adjustments (follows the role table in Section 4.1).
+  - **Adjustments** need a note and a direction (credit or debit). The "counts toward tier" box starts ticked.
+  - **Inactive or merged members** can't have new transactions. An Owner or Manager reactivates the member first.
+  - **Refunds** can never be more than what is left of the purchase they are linked to. Linking is strongly encouraged but optional.
+  - **Limits:** one amount can be at most $1,000,000.00 (a larger number is almost certainly a typo). A date can't be in the future.
+  - **Visibility:** every employee can see a customer's transactions (Staff need them to pick the purchase to refund). Cross-customer financial reports stay limited to Owner and Managers (Step 10).
+  - **Audit log:** only adjustments, back-dated or past-month entries, and voids are logged. Routine same-day sales are not, because the transaction history already holds them permanently.
+  - **Month rule for refunds:** a refund counts against the New York month it is entered, even if the Owner dates it in an earlier month.
+  - **Voiding:** Owner only, reason required. A purchase that still has active refunds can't be voided until those refunds are voided.
+  - **Merging customers** moves their transactions to the surviving member.
 
 ---
 
@@ -778,11 +789,13 @@ This lets the owner test monthly features without waiting a month.
 - Backdating permissions.
 
 **Owner test:**
-1. Record a $100 purchase. Net spend shows $100.
-2. Refund $20 of it. Net spend shows $80.
-3. Record a $50 trade. Net spend still shows $80.
-4. Try entering $0 or "abc". You get a clear error.
-5. As Staff, try to date a sale last month. It's blocked. As the Owner, it's allowed and logged.
+1. Open **Record transaction** in the menu, pick a customer, and record a **$100 purchase**. The profile shows **$100.00** lifetime and this month.
+2. Record a **$20 refund** and choose that purchase in the list. Spending shows **$80.00**.
+3. Record a **$50 trade / buy-in**. Spending is still **$80.00**.
+4. Enter **$0** or **"abc"**. You get a clear message.
+5. Tick **"This happened earlier"** and pick a date in a past month. The Owner can do it. A Staff member (create one with **Create employee**) is told only the Owner can.
+6. As the Owner, click **Void** on a transaction and give a reason. It stays in the list marked **Voided**, and spending updates.
+7. Open the **Audit log**. The past-month entry and the void are listed.
 
 ---
 

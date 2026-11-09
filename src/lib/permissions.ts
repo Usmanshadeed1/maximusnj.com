@@ -1,4 +1,4 @@
-import type { EmployeeRole } from "@/types/database";
+import type { EmployeeRole, TransactionType } from "@/types/database";
 
 /**
  * Role rules for the staff app (PROJECT_SCOPE.md §4.1).
@@ -75,4 +75,24 @@ export function canMergeCustomers(actor: EmployeeRole): boolean {
 /** Managers and Staff must be assigned to at least one store; Owners work at every store. */
 export function requiresStore(role: EmployeeRole): boolean {
   return role !== "owner";
+}
+
+/**
+ * Staff record purchases, refunds and trades. Owner and Managers also record membership
+ * payments and manual adjustments (PROJECT_SCOPE.md §4.1, §8).
+ */
+export function allowedTransactionTypes(actor: EmployeeRole): TransactionType[] {
+  return actor === "staff"
+    ? ["purchase", "refund", "trade_buyin"]
+    : ["purchase", "refund", "trade_buyin", "membership_payment", "adjustment"];
+}
+
+/** Only the Owner voids a transaction (nothing is ever deleted). */
+export function canVoidTransactions(actor: EmployeeRole): boolean {
+  return actor === "owner";
+}
+
+/** Staff and Managers may backdate within the current month; only the Owner can go further back. */
+export function canBackdateAnyMonth(actor: EmployeeRole): boolean {
+  return actor === "owner";
 }

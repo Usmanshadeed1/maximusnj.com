@@ -93,6 +93,42 @@ export type DuplicateMatch = {
   match_reasons: ("phone" | "email" | "name")[];
 };
 
+export type TransactionType = "purchase" | "refund" | "trade_buyin" | "membership_payment" | "adjustment";
+export type AdjustmentDirection = "credit" | "debit";
+
+export type TransactionRow = {
+  id: string;
+  customer_id: string;
+  location_id: string;
+  employee_id: string | null;
+  type: TransactionType;
+  amount_cents: number;
+  adjustment_direction: AdjustmentDirection | null;
+  counts_toward_tier: boolean;
+  refund_of_transaction_id: string | null;
+  occurred_at: string;
+  local_month: string;
+  note: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
+  created_at: string;
+};
+
+export type CustomerSpend = {
+  lifetime_net_cents: number;
+  this_month_net_cents: number;
+  transaction_count: number;
+};
+
+export type RefundablePurchase = {
+  purchase_id: string;
+  total_cents: number;
+  remaining_cents: number;
+  purchase_at: string;
+  store_id: string;
+};
+
 export type VisitStatus = "counted" | "duplicate";
 
 export type VisitRow = {
@@ -142,6 +178,7 @@ export type Database = {
       app_settings: ReadOnlyTable<AppSettingRow>;
       customers: ReadOnlyTable<CustomerRow>;
       visits: ReadOnlyTable<VisitRow>;
+      transactions: ReadOnlyTable<TransactionRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -217,6 +254,32 @@ export type Database = {
         Args: { p_source_id: string; p_target_id: string; p_reason: string };
         Returns: CustomerRow;
       };
+      record_transaction: {
+        Args: {
+          p_customer_id: string;
+          p_location_id: string;
+          p_type: TransactionType;
+          p_amount_cents: number;
+          p_occurred_at?: string | null;
+          p_note?: string | null;
+          p_refund_of?: string | null;
+          p_adjustment_direction?: AdjustmentDirection | null;
+          p_counts_toward_tier?: boolean;
+        };
+        Returns: TransactionRow;
+      };
+      void_transaction: {
+        Args: { p_id: string; p_reason: string };
+        Returns: TransactionRow;
+      };
+      customer_spend: {
+        Args: { p_customer_id: string };
+        Returns: CustomerSpend[];
+      };
+      refundable_purchases: {
+        Args: { p_customer_id: string };
+        Returns: RefundablePurchase[];
+      };
       check_in: {
         Args: { p_member_number: string; p_location_id: string; p_device_id?: string | null };
         Returns: CheckInResult;
@@ -226,7 +289,7 @@ export type Database = {
         Returns: EmployeeRow;
       };
     };
-    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource; visit_status: VisitStatus };
+    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource; visit_status: VisitStatus; transaction_type: TransactionType; adjustment_direction: AdjustmentDirection };
     CompositeTypes: { [_ in never]: never };
   };
 };

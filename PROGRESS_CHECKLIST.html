@@ -122,14 +122,16 @@ const STEPS = [
       "Leave the tablet alone for 10 minutes. It locks.",
       "The visit shows on the customer's profile."
     ] },
-  { n: 4, status: "not-started", name: "Transactions",
+  { n: 4, status: "ready-to-test", name: "Transactions",
     goal: "Staff record purchases, refunds, trades and adjustments.",
     tests: [
-      "Record a $100 purchase. Net spend shows $100.",
-      "Refund $20 of it. Net spend shows $80.",
-      "Record a $50 trade. Net spend still shows $80.",
-      "Enter $0 or \"abc\". You get a clear error.",
-      "As Staff, dating a sale last month is blocked. As the Owner, it's allowed and logged."
+      "Open Record transaction in the menu, pick a customer, and record a $100 purchase. The profile shows $100.00.",
+      "Record a $20 refund and choose that purchase in the list. Spending shows $80.00.",
+      "Record a $50 trade / buy-in. Spending is still $80.00.",
+      "Enter $0 or \"abc\" as the amount. You get a clear message.",
+      "Tick \"This happened earlier\" and pick a date in a past month. The Owner can do it. A Staff member (create one with Create employee) is told only the Owner can.",
+      "As the Owner, click Void on a transaction and give a reason. It stays in the list as Voided, and spending updates.",
+      "Open the Audit log. The past-month entry and the void are listed."
     ] },
   { n: 5, status: "not-started", name: "Tier engine and Tier Settings",
     goal: "Tiers are calculated with your settings, and customers see their progress.",

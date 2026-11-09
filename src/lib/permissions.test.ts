@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  allowedTransactionTypes,
+  canBackdateAnyMonth,
   canChangeActive,
   canChangeCustomerStatus,
   canChangeRole,
@@ -11,6 +13,7 @@ import {
   canManageLocations,
   canViewAuditLog,
   canViewEmployees,
+  canVoidTransactions,
   invitableRoles,
 } from "./permissions";
 
@@ -62,6 +65,26 @@ describe("owner-only actions", () => {
     expect(canDeleteLocations("owner")).toBe(true);
     expect(canDeleteLocations("manager")).toBe(false);
     expect(canDeleteLocations("staff")).toBe(false);
+  });
+});
+
+describe("transactions", () => {
+  it("Staff record purchases, refunds and trades only", () => {
+    expect(allowedTransactionTypes("staff")).toEqual(["purchase", "refund", "trade_buyin"]);
+  });
+
+  it("Owner and Managers can record every type", () => {
+    expect(allowedTransactionTypes("manager")).toContain("adjustment");
+    expect(allowedTransactionTypes("manager")).toContain("membership_payment");
+    expect(allowedTransactionTypes("owner")).toHaveLength(5);
+  });
+
+  it("only the Owner voids and backdates into closed months", () => {
+    expect(canVoidTransactions("owner")).toBe(true);
+    expect(canVoidTransactions("manager")).toBe(false);
+    expect(canBackdateAnyMonth("owner")).toBe(true);
+    expect(canBackdateAnyMonth("manager")).toBe(false);
+    expect(canBackdateAnyMonth("staff")).toBe(false);
   });
 });
 
