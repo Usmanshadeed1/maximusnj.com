@@ -275,7 +275,9 @@ export type CheckInResult =
   | { result: "inactive" }
   | { result: "pin_required" }
   | { result: "pin_incorrect"; attempts_left: number }
-  | { result: "pin_locked"; minutes_left: number };
+  | { result: "pin_locked"; minutes_left: number }
+  | { result: "pin_not_found"; attempts_left: number }
+  | { result: "kiosk_locked"; minutes_left: number };
 
 // ---- Customer portal (Step 7) -------------------------------------------------------------------
 export type LinkState = "linked" | "unverified" | "needs_signup" | "contact_store";
@@ -719,6 +721,10 @@ export type Database = {
       };
       check_in: {
         Args: { p_member_number: string; p_location_id: string; p_device_id?: string | null; p_pin?: string | null };
+        Returns: CheckInResult;
+      };
+      check_in_by_pin: {
+        Args: { p_pin: string; p_location_id: string; p_device_id?: string | null };
         Returns: CheckInResult;
       };
       portal_link_account: { Args: Record<string, never>; Returns: { state: LinkState } };

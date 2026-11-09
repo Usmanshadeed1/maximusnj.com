@@ -181,7 +181,10 @@ update public.raffles set opens_at = now() - interval '1 hour', closes_at = now(
 -- 5. Online entry and withdrawing (the portal) -----------------------------------------------------------------
 select pg_temp.act_as('00000000-0000-0000-0000-0000000008b2');
 insert into t select 'p2', public.portal_raffles();
-select is((select jsonb_array_length(r) from t where label = 'p2'), 3, 'A member sees the open raffles (two stores plus the company one) but not drafts');
+-- Count only this test's raffles: the shared test database may hold other open raffles.
+select is((select count(*)::int from t, jsonb_array_elements(r) x
+           where label = 'p2' and (x ->> 'raffle_id')::uuid in (select ra from ids union select rb from ids union select rco from ids)),
+  3, 'A member sees the open raffles (two stores plus the company one) but not drafts');
 select ok((select not (r::text ~* 'entries|count|total|Fan One|RFL000001') from t where label = 'p2'), 'The member''s view has no counts and no other entrants');
 select is(public.portal_enter_raffle((select rb from ids)), true, 'A member enters Store B''s raffle online');
 select throws_ok($$ select public.portal_enter_raffle((select ra from ids)) $$, 'P0001', 'entered_other_raffle',

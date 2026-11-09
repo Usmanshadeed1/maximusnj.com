@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Keyboard, Loader2, Lock, LogIn, ScanLine, ShieldCheck, Store, X, XCircle } from "lucide-react";
+import { CheckCircle2, KeyRound, Keyboard, Loader2, Lock, LogIn, ScanLine, ShieldCheck, Store, X, XCircle } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Button } from "@/components/ui/button";
 import { BUSINESS_TIME_ZONE } from "@/lib/format";
-import { type KioskOutcome, cleanMemberNumber, kioskScreen, wrongPinMessage } from "@/lib/kiosk";
+import { type KioskOutcome, cleanMemberNumber, kioskScreen, unknownPinMessage, wrongPinMessage } from "@/lib/kiosk";
 import { cn } from "@/lib/utils";
-import { checkInAction } from "@/server/actions/kiosk";
+import { checkInAction, checkInByPinAction } from "@/server/actions/kiosk";
 import { KioskPin } from "./kiosk-pin";
 import { StaffCredentialsForm } from "./staff-credentials-form";
 
@@ -22,6 +22,8 @@ type Phase =
   | { type: "checking" }
   /** The member has a PIN: waiting for it. `attempt` counts wrong tries (so the pad can shake). */
   | { type: "pin"; memberNumber: string; error: string | null; attempt: number }
+  /** No card: the member types their PIN on its own. */
+  | { type: "pinOnly"; error: string | null; attempt: number }
   | { type: "result"; outcome: KioskOutcome };
 
 /** Stable id for this tablet (attached to every visit). Falls back gracefully if storage is blocked. */
@@ -116,6 +118,23 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
     if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
   };
 
+  /** PIN on its own (no card). */
+  const runPin = async (pin: string, attempt: number) => {
+    setPhase({ type: "checking" });
+    let outcome: KioskOutcome;
+    try {
+      outcome = await checkInByPinAction(pin, deviceId.current);
+    } catch {
+      outcome = { kind: "error" };
+    }
+    if (outcome.kind === "pin_not_found") {
+      setPhase({ type: "pinOnly", error: unknownPinMessage(outcome.attemptsLeft), attempt: attempt + 1 });
+      return;
+    }
+    setPhase({ type: "result", outcome });
+    if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+  };
+
   const submit = async () => {
     const memberNumber = cleanMemberNumber(value);
     if (!memberNumber || phase.type !== "ready") return;
@@ -199,6 +218,22 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
         </form>
         {!manual && <p className="mt-3 text-sm text-white/50">Tap the box to type your number.</p>}
 
+        <div className="mt-8 flex w-full max-w-xl items-center gap-4 text-white/50" aria-hidden>
+          <span className="h-px flex-1 bg-white/20" />
+          <span className="text-sm font-semibold tracking-widest uppercase">or</span>
+          <span className="h-px flex-1 bg-white/20" />
+        </div>
+        <Button
+          type="button"
+          size="kiosk"
+          variant="outline"
+          disabled={!interactive}
+          onClick={() => setPhase({ type: "pinOnly", error: null, attempt: 0 })}
+          className="mt-6 h-16 w-full max-w-xl border-2 border-white/40 bg-white/10 text-xl text-white hover:bg-white/20 hover:text-white"
+        >
+          <KeyRound aria-hidden className="size-6" /> Check in with my PIN
+        </Button>
+
         <div aria-hidden className="mt-14 hidden items-center gap-3 opacity-80 sm:flex">
           {TIERS.map((tier) => (
             <TierBadge key={tier} tier={tier} tone="dark" />
@@ -221,6 +256,18 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
           error={phase.error}
           attempt={phase.attempt}
           onSubmit={(pin) => void run(phase.memberNumber, pin, phase.attempt)}
+          onCancel={backToReady}
+        />
+      )}
+
+      {/* PIN on its own (no card) */}
+      {phase.type === "pinOnly" && (
+        <KioskPin
+          key="pin-only"
+          title="Type your PIN"
+          error={phase.error}
+          attempt={phase.attempt}
+          onSubmit={(pin) => void runPin(pin, phase.attempt)}
           onCancel={backToReady}
         />
       )}

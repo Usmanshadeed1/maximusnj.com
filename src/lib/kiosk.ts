@@ -13,6 +13,10 @@ export type KioskOutcome =
   | { kind: "pin_required" }
   | { kind: "pin_incorrect"; attemptsLeft: number }
   | { kind: "pin_locked"; minutesLeft: number }
+  /** Typed a PIN on its own and it matched nobody. */
+  | { kind: "pin_not_found"; attemptsLeft: number }
+  /** Too many wrong PINs on this tablet: PIN entry waits a few minutes. */
+  | { kind: "kiosk_locked"; minutesLeft: number }
   | { kind: "error" }
   | { kind: "session_expired" };
 
@@ -54,6 +58,13 @@ export function kioskScreen(outcome: KioskOutcome): KioskScreen {
         title: "PIN locked",
         message: `Too many wrong tries. Please wait ${outcome.minutesLeft} ${outcome.minutesLeft === 1 ? "minute" : "minutes"} or see a staff member.`,
       };
+    case "kiosk_locked":
+      return {
+        tone: "error",
+        title: "Too many wrong PINs",
+        message: `Please scan your card, or try your PIN again in ${outcome.minutesLeft} ${outcome.minutesLeft === 1 ? "minute" : "minutes"}.`,
+      };
+    case "pin_not_found":
     case "pin_required":
     case "pin_incorrect":
       return { tone: "error", title: "PIN needed", message: "Please enter your PIN." };
@@ -67,4 +78,9 @@ export function kioskScreen(outcome: KioskOutcome): KioskScreen {
 /** The message under "Enter your PIN" after a wrong try. */
 export function wrongPinMessage(attemptsLeft: number): string {
   return `That PIN isn't right. ${attemptsLeft} ${attemptsLeft === 1 ? "try" : "tries"} left.`;
+}
+
+/** The message on the PIN pad when a PIN typed on its own matched nobody. */
+export function unknownPinMessage(attemptsLeft: number): string {
+  return `We don't recognise that PIN. ${attemptsLeft} ${attemptsLeft === 1 ? "try" : "tries"} left.`;
 }

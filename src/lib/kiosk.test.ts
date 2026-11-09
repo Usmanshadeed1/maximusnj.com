@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanMemberNumber, isPlausibleMemberNumber, kioskScreen, wrongPinMessage } from "./kiosk";
+import { cleanMemberNumber, isPlausibleMemberNumber, kioskScreen, unknownPinMessage, wrongPinMessage } from "./kiosk";
 
 describe("cleanMemberNumber", () => {
   it("strips scanner whitespace and upper-cases", () => {
@@ -48,5 +48,20 @@ describe("kiosk PIN wording", () => {
   it("counts the tries left after a wrong PIN", () => {
     expect(wrongPinMessage(4)).toBe("That PIN isn't right. 4 tries left.");
     expect(wrongPinMessage(1)).toBe("That PIN isn't right. 1 try left.");
+  });
+});
+
+describe("PIN on its own", () => {
+  it("says when a PIN matches nobody, with the tries left", () => {
+    expect(unknownPinMessage(4)).toBe("We don't recognise that PIN. 4 tries left.");
+    expect(unknownPinMessage(1)).toBe("We don't recognise that PIN. 1 try left.");
+  });
+
+  it("asks people to scan their card while PIN entry is locked", () => {
+    expect(kioskScreen({ kind: "kiosk_locked", minutesLeft: 5 })).toMatchObject({
+      tone: "error",
+      title: "Too many wrong PINs",
+      message: expect.stringContaining("scan your card"),
+    });
   });
 });

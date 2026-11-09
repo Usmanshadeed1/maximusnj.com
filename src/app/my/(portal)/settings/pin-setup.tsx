@@ -56,8 +56,8 @@ export function PinSetup({ hasPin }: { hasPin: boolean }) {
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold text-brand-navy-deep">Your PIN</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            A PIN keeps your card safe. At the store entrance you scan your card and type your PIN, so nobody else can
-            check in as you.
+            Use your PIN to check in at the store entrance without your card. If you scan your card, the kiosk asks for
+            your PIN too, so nobody else can check in as you. Every member's PIN is different.
           </p>
           <p
             className={

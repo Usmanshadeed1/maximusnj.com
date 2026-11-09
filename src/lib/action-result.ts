@@ -65,6 +65,7 @@ const DB_MESSAGES: Record<string, string> = {
   transaction_immutable: "Transactions can't be edited or deleted. Use a void or a reversing entry.",
   name_mismatch: "The name you typed doesn't match the store name.",
   pin_invalid: "A PIN must be 6 to 12 numbers.",
+  pin_taken: "That PIN is already used by another member. Please choose a different one.",
   no_pin: "This member hasn't set a PIN.",
   no_email: "This member has no email address on file.",
   already_linked: "This member already has an online login.",

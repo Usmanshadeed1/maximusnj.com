@@ -18,7 +18,9 @@ export function KioskPin({
   attempt,
   onSubmit,
   onCancel,
+  title = "Enter your PIN",
 }: {
+  title?: string;
   error: string | null;
   attempt: number;
   onSubmit: (pin: string) => void;
@@ -55,7 +57,7 @@ export function KioskPin({
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-brand-navy-deep/97 px-5 py-8 backdrop-blur">
       <div className="w-full max-w-md text-center text-white">
         <KeyRound aria-hidden className="mx-auto size-12 text-brand-yellow" />
-        <h2 className="mt-3 text-4xl font-extrabold tracking-tight">Enter your PIN</h2>
+        <h2 className="mt-3 text-4xl font-extrabold tracking-tight">{title}</h2>
         <p className="mt-2 min-h-7 text-lg" role="alert">
           {error ? <span className="font-semibold text-red-300">{error}</span> : <span className="text-white/70">Then tap Done.</span>}
         </p>

@@ -25,7 +25,7 @@ Staff app: **members.maximusnj.com/staff** · Member page: **members.maximusnj.c
 
 **Register a new customer:** Customers → *Register customer*. Fill in the name and mobile phone. The app warns if the person may already be a member. A member number (MAX…) is created for you. Press *Print card*.
 
-**Check-in kiosk:** open *Check-in kiosk* on the entrance tablet and press *Start kiosk mode*. Members scan their card. Members who set a PIN type it on the number pad. The kiosk locks after 10 minutes without use; any staff member unlocks it with their own email and password.
+**Check-in kiosk:** open *Check-in kiosk* on the entrance tablet and press *Start kiosk mode*. Members scan their card, or press **Check in with my PIN** and type their PIN on the number pad (no card needed). Members who scan a card and have a PIN are asked for it too. Five wrong PINs in a row lock PIN entry on that tablet for 5 minutes. The kiosk locks after 10 minutes without use; any staff member unlocks it with their own email and password.
 
 **Record a sale:** *Record transaction* → find the member → choose Purchase, Refund, Trade / buy-in… → amount → Record. Mistakes are never edited: ask the Owner to *Void*, or record a refund.
 

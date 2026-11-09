@@ -13,7 +13,7 @@ import { KIOSK_COOKIE, KIOSK_COOKIE_OPTIONS, getKioskStore } from "@/server/kios
 import { getSelectedStore } from "@/server/store-context";
 import { getTierLabels } from "@/server/tiers";
 import type { TierKey } from "@/lib/tier/engine";
-import type { Database } from "@/types/database";
+import type { CheckInResult, Database } from "@/types/database";
 
 /** Turns this device into the check-in kiosk for the currently selected store. */
 export async function startKioskAction(): Promise<void> {
@@ -46,8 +46,11 @@ export async function checkInAction(
     p_pin: pin && /^[0-9]{1,12}$/.test(pin) ? pin : null,
   });
   if (error || !data) return { kind: "error" };
-  const labels = await getTierLabels();
+  return toOutcome(data);
+}
 
+async function toOutcome(data: CheckInResult): Promise<KioskOutcome> {
+  const labels = await getTierLabels();
   switch (data.result) {
     case "checked_in":
       return {
@@ -69,7 +72,28 @@ export async function checkInAction(
       return { kind: "pin_incorrect", attemptsLeft: data.attempts_left };
     case "pin_locked":
       return { kind: "pin_locked", minutesLeft: data.minutes_left };
+    case "pin_not_found":
+      return { kind: "pin_not_found", attemptsLeft: data.attempts_left };
+    case "kiosk_locked":
+      return { kind: "kiosk_locked", minutesLeft: data.minutes_left };
   }
+}
+
+/** Check-in with the PIN alone (no card). Returns only what the kiosk may show. */
+export async function checkInByPinAction(pin: string, deviceId: string | null): Promise<KioskOutcome> {
+  const employee = await getCurrentEmployee();
+  if (!employee) return { kind: "session_expired" };
+  const store = await getKioskStore();
+  if (!store) return { kind: "session_expired" };
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("check_in_by_pin", {
+    p_pin: /^[0-9]{1,12}$/.test(pin) ? pin : "",
+    p_location_id: store.id,
+    p_device_id: deviceId?.slice(0, 64) ?? null,
+  });
+  if (error || !data) return { kind: "error" };
+  return toOutcome(data);
 }
 
 const credentialsSchema = z.object({

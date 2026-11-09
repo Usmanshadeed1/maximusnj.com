@@ -634,6 +634,13 @@ During the current month, the staff app and the portal show:
 - **Member profile** gains an *Activity timeline* (visits, money, tiers and raffles together) and *Raffle history*, next to the existing visits, spending, tier and award sections.
 - **Audit log** (Owner) gains filters by group, person and dates, paging, and readable lines for member-page, PIN and raffle actions. Member actions are shown as the member.
 
+### 11.2 Check in with a PIN alone ✅ (client request)
+
+- At the kiosk a member can **scan their card or press "Check in with my PIN"** and type their PIN on the number pad. Scanning a card of a member who has a PIN still asks for the PIN.
+- **Every PIN is unique.** Choosing a PIN another member already has is refused ("choose a different one"). Accepted trade-off (agreed with the owner): that message reveals that the PIN exists, so someone could use it to check in as that member; a check-in only shows a first name and records a visit.
+- To tell PINs apart without storing them, each PIN also has a keyed fingerprint (HMAC-SHA256 with a secret held in a private database schema), next to the bcrypt hash. PINs set before this change need to be set again to work without a card.
+- Guessing is limited per kiosk tablet: **5 wrong PINs in a row lock PIN entry on that tablet for 5 minutes** (settings `pin_device_max_attempts`, `pin_device_lock_minutes`), audit-logged. The member's own 5-try lock still applies.
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -1265,3 +1272,4 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 55 | Step 11 paused | The old-system move is skipped for now; it is needed only if the old members site holds real customers. The tools stay ready (`npm run migrate`) |
 | 56 | Erasing a member | The Owner can download a member's data or erase their personal details (reason + typed member number); sales and visits stay under the member number |
 | 57 | Raffle products | Owner/Managers keep a product list; a raffle offers several; members rank the ones they want; staff assign a product to each person by hand after the draw (no automatic assignment, no prices) |
+| 58 | PIN-only check-in | Card or PIN at the kiosk; every PIN unique ("taken" message accepted); 5 wrong PINs per tablet lock PIN entry for 5 minutes |
