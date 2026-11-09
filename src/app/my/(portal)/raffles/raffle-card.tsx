@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { CalendarClock, CheckCircle2, Clock, Frown, Hourglass, ImageIcon, MapPin, PartyPopper, PackageCheck, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ChoicePicker } from "@/components/raffles/choice-picker";
 import { FormMessage } from "@/components/ui/form";
 import type { ActionState } from "@/lib/action-result";
 import { formatBusinessDateTime, formatCalendarDate } from "@/lib/format";
@@ -21,6 +22,9 @@ function ResultPanel({ raffle }: { raffle: PortalRaffle }) {
         <p className="flex items-center gap-2 text-xl font-extrabold">
           <PartyPopper aria-hidden className="size-6" /> You won!
         </p>
+        {result.product && (
+          <p className="mt-1 text-lg font-bold">{result.product}</p>
+        )}
         <p className="mt-2 text-[15px] font-medium">
           Come to <strong>{pickup}</strong> to pay and pick it up
           {result.deadline_at ? <> by <strong>{formatBusinessDateTime(result.deadline_at)}</strong></> : ""}. Bring your member card.
@@ -36,7 +40,9 @@ function ResultPanel({ raffle }: { raffle: PortalRaffle }) {
     declined: { icon: Frown, text: "You passed on this spot. Thanks for letting us know.", tone: "bg-muted" },
     not_selected: { icon: Frown, text: "You weren't selected this time. Thanks for entering. See you at the next one!", tone: "bg-muted" },
   };
-  const item = plain[result.state];
+  const item = result.state === "collected" && result.product
+    ? { ...plain.collected, text: `You collected ${result.product}. Enjoy!` }
+    : plain[result.state];
   if (!item) return null;
   const Icon = item.icon;
   return (
@@ -50,11 +56,21 @@ function ResultPanel({ raffle }: { raffle: PortalRaffle }) {
 export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: boolean }) {
   const [result, setResult] = useState<ActionState>({});
   const [pending, startTransition] = useTransition();
+  const [choices, setChoices] = useState<string[]>([]);
+  const [picking, setPicking] = useState(false);
+  const hasProducts = raffle.products.length > 0;
   const open = raffle.phase === "open";
   const upcoming = raffle.phase === "upcoming";
 
-  const run = (action: (id: string) => Promise<ActionState>) =>
-    startTransition(async () => setResult(await action(raffle.id)));
+  const run = (action: (id: string, choices?: string[]) => Promise<ActionState>, picked: string[] = []) =>
+    startTransition(async () => {
+      const outcome = await action(raffle.id, picked);
+      setResult(outcome);
+      if (outcome.ok) {
+        setPicking(false);
+        setChoices([]);
+      }
+    });
 
   const pickup =
     raffle.pickupRule === "home_store" ? "Your home store" : (raffle.pickup ?? raffle.store ?? "In store");
@@ -112,6 +128,25 @@ export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: b
           )}
         </dl>
 
+        {raffle.entered && raffle.myChoices.length > 0 && (
+          <div className="mt-4 rounded-2xl bg-secondary/60 px-4 py-3">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Your choices</p>
+            <ol className="mt-1.5 flex flex-col gap-1 text-[15px]">
+              {raffle.myChoices.map((name, i) => (
+                <li key={name}>
+                  <span className="font-bold text-brand-blue">{i + 1}.</span> {name}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        {!raffle.entered && hasProducts && (open || upcoming) && !picking && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Products in this raffle</p>
+            <p className="mt-1 text-[15px]">{raffle.products.map((p) => p.name).join(" · ")}</p>
+          </div>
+        )}
+
         <div className="mt-5">
           <FormMessage state={result} className="mb-3" />
           {raffle.result ? (
@@ -134,6 +169,29 @@ export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: b
             <p className="rounded-xl bg-muted px-4 py-3 text-center text-sm text-muted-foreground">
               Please ask a team member in store about your entry.
             </p>
+          ) : open && hasProducts ? (
+            picking ? (
+              <div className="flex flex-col gap-4">
+                <ChoicePicker
+                  products={raffle.products.map((p) => ({ id: p.id, name: p.name, description: p.description, imageUrl: p.image_url }))}
+                  value={choices}
+                  onChange={setChoices}
+                  disabled={pending}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" size="lg" disabled={pending} onClick={() => { setPicking(false); setChoices([]); }}>
+                    Cancel
+                  </Button>
+                  <Button size="lg" variant="accent" disabled={pending || choices.length === 0} onClick={() => run(enterRaffleAction, choices)}>
+                    {pending ? "Entering…" : "Enter"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button size="lg" variant="accent" className="w-full text-base" onClick={() => setPicking(true)}>
+                Choose products and enter
+              </Button>
+            )
           ) : open ? (
             <Button size="lg" variant="accent" className="w-full text-base" disabled={pending} onClick={() => run(enterRaffleAction)}>
               {pending ? "Entering…" : "Enter the raffle"}

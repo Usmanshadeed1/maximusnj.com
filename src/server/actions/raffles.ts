@@ -15,6 +15,18 @@ import {
 } from "@/lib/validation/raffle";
 import { requireEmployee } from "@/server/auth";
 
+/** Saves the products a new raffle offers. Returns false if that failed (the raffle itself is kept as a draft). */
+async function saveProducts(raffleIds: string[], formData: FormData): Promise<boolean> {
+  const productIds = formData.getAll("productIds").map(String).filter((v) => z.uuid().safeParse(v).success);
+  if (productIds.length === 0) return true;
+  const supabase = await createSupabaseServerClient();
+  for (const id of raffleIds) {
+    const { error } = await supabase.rpc("set_raffle_products", { p_raffle_id: id, p_product_ids: productIds });
+    if (error) return false;
+  }
+  return true;
+}
+
 function setupArgs(input: z.output<typeof raffleSettingsSchema>) {
   return {
     p_pickup_rule: input.pickupRule,
@@ -53,8 +65,9 @@ export async function createReleaseAction(_prev: ActionState, formData: FormData
     ...setupArgs(raffle.data),
   });
   if (error || !data) return { error: friendlyDbError(error) };
+  const productsSaved = await saveProducts(data.raffle_ids, formData);
   revalidatePath("/staff/raffles");
-  redirect(`/staff/raffles/${data.release_id}?created=1`);
+  redirect(`/staff/raffles/${data.release_id}?created=1${productsSaved ? "" : "&products=failed"}`);
 }
 
 /** Adds more raffles (for example another store) to an existing release. */
@@ -66,15 +79,16 @@ export async function addRafflesAction(_prev: ActionState, formData: FormData): 
   if (!raffle.success) return validationFailed(raffle.error);
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("add_raffles_to_release", {
+  const { data: added, error } = await supabase.rpc("add_raffles_to_release", {
     p_release_id: releaseId.data,
     p_scope: raffle.data.scope,
     p_location_ids: raffle.data.locationIds,
     ...setupArgs(raffle.data),
   });
-  if (error) return { error: friendlyDbError(error) };
+  if (error || !added) return { error: friendlyDbError(error) };
+  const productsSaved = await saveProducts(added.raffle_ids, formData);
   revalidatePath(`/staff/raffles/${releaseId.data}`);
-  redirect(`/staff/raffles/${releaseId.data}?added=1`);
+  redirect(`/staff/raffles/${releaseId.data}?added=1${productsSaved ? "" : "&products=failed"}`);
 }
 
 export async function updateReleaseAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -160,7 +174,12 @@ export async function enterMemberAction(formData: FormData): Promise<void> {
   if (!ids.success) redirect("/staff/raffles");
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("staff_enter_raffle", { p_raffle_id: ids.data.raffleId, p_customer_id: ids.data.customerId });
+  const choices = formData.getAll("choices").map(String).filter((v) => z.uuid().safeParse(v).success);
+  const { error } = await supabase.rpc("staff_enter_raffle", {
+    p_raffle_id: ids.data.raffleId,
+    p_customer_id: ids.data.customerId,
+    p_choices: choices,
+  });
   revalidatePath(`/staff/raffles/${ids.data.releaseId}/${ids.data.raffleId}`);
   redirect(
     `/staff/raffles/${ids.data.releaseId}/${ids.data.raffleId}?${error ? `error=${encodeURIComponent(friendlyDbError(error))}` : "entered=1"}`,
@@ -183,4 +202,28 @@ export async function removeEntryAction(_prev: ActionState, formData: FormData):
   if (error) return { error: friendlyDbError(error) };
   revalidatePath(`/staff/raffles/${releaseId.data}/${parsed.data.raffleId}`);
   return { ok: true, message: "Entry removed." };
+}
+
+/** After the draw: give a person a product by hand, or take it back (no product). */
+export async function assignProductAction(formData: FormData): Promise<void> {
+  await requireEmployee();
+  const parsed = z
+    .object({ releaseId: z.uuid(), raffleId: z.uuid(), resultId: z.uuid(), productId: z.union([z.uuid(), z.literal("")]) })
+    .safeParse({
+      releaseId: formData.get("releaseId"),
+      raffleId: formData.get("raffleId"),
+      resultId: formData.get("resultId"),
+      productId: formData.get("productId") ?? "",
+    });
+  if (!parsed.success) redirect("/staff/raffles");
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("assign_raffle_product", {
+    p_result_id: parsed.data.resultId,
+    p_product_id: parsed.data.productId || null,
+  });
+  revalidatePath(`/staff/raffles/${parsed.data.releaseId}/${parsed.data.raffleId}`);
+  redirect(
+    `/staff/raffles/${parsed.data.releaseId}/${parsed.data.raffleId}?${error ? `error=${encodeURIComponent(friendlyDbError(error))}` : `ok=${encodeURIComponent(parsed.data.productId ? "Product given." : "Product taken back.")}`}`,
+  );
 }

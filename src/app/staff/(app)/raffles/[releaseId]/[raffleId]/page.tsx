@@ -17,6 +17,8 @@ import { CustomerSearch } from "../../../customers/customer-search";
 import { CancelRaffleDialog, RemoveEntryDialog } from "../../raffle-forms";
 import { DrawDialog } from "./result-dialogs";
 import { ResultsCard } from "./results-card";
+import { ChangeProductsDialog, EnterWithChoicesDialog } from "../../product-parts";
+import { getChoicesByEntry, getProducts, getRaffleProducts } from "@/server/products";
 
 export const metadata: Metadata = { title: "Raffle" };
 
@@ -46,6 +48,14 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
     drawn ? getSelectedStore() : Promise.resolve(null),
   ]);
   const enteredIds = new Set(activeEntries.map((e) => e.customerId));
+  const [raffleProducts, allProducts, choices] = await Promise.all([
+    getRaffleProducts(raffleId),
+    raffle.canManage && editable ? getProducts() : Promise.resolve([]),
+    getChoicesByEntry([...entries.map((e) => e.id), ...results.map((r) => r.entryId)]),
+  ]);
+  const offered = raffleProducts.map((p) => ({ id: p.id, name: p.name, description: p.description, imageUrl: p.imageUrl }));
+  // Offer every active product, plus any already on this raffle (even if turned off since).
+  const pickable = [...offered, ...allProducts.filter((p) => !raffleProducts.some((r) => r.id === p.id)).map((p) => ({ id: p.id, name: p.name, description: p.description, imageUrl: p.image_url }))];
 
   const ScopeIcon = raffle.scope === "company" ? Globe : Store;
 
@@ -128,6 +138,31 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
         )}
       </Card>
 
+      <Card className="mt-6 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-bold text-brand-navy-deep">Products</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {offered.length === 0
+                ? "No products: this raffle is for a single item."
+                : "Members rank the products they want. After the draw you give each person a product by hand."}
+            </p>
+          </div>
+          {raffle.canManage && editable && (
+            <ChangeProductsDialog releaseId={releaseId} raffleId={raffleId} all={pickable} current={offered.map((p) => p.id)} />
+          )}
+        </div>
+        {offered.length > 0 && (
+          <ol className="mt-4 flex flex-wrap gap-2">
+            {offered.map((p, i) => (
+              <li key={p.id} className="inline-flex items-center gap-2 rounded-full border bg-secondary/50 px-3 py-1.5 text-sm font-medium">
+                <span className="text-xs font-bold text-muted-foreground">{i + 1}.</span> {p.name}
+              </li>
+            ))}
+          </ol>
+        )}
+      </Card>
+
       {drawn && results.length > 0 && (
         <ResultsCard
           releaseId={releaseId}
@@ -139,6 +174,8 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
           stores={stores}
           defaultStoreId={selectedStore?.id ?? stores[0]?.id ?? ""}
           emailReady={isEmailConfigured()}
+          products={offered}
+          choices={Object.fromEntries(choices)}
         />
       )}
 
@@ -173,12 +210,22 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
                         ) : inactive ? (
                           <Badge variant="secondary">Inactive</Badge>
                         ) : (
-                          <form action={enterMemberAction}>
-                            <input type="hidden" name="releaseId" value={releaseId} />
-                            <input type="hidden" name="raffleId" value={raffleId} />
-                            <input type="hidden" name="customerId" value={c.id} />
-                            <Button type="submit">Enter in raffle</Button>
-                          </form>
+                          offered.length > 0 ? (
+                            <EnterWithChoicesDialog
+                              releaseId={releaseId}
+                              raffleId={raffleId}
+                              customerId={c.id}
+                              name={`${c.first_name} ${c.last_name}`}
+                              products={offered}
+                            />
+                          ) : (
+                            <form action={enterMemberAction}>
+                              <input type="hidden" name="releaseId" value={releaseId} />
+                              <input type="hidden" name="raffleId" value={raffleId} />
+                              <input type="hidden" name="customerId" value={c.id} />
+                              <Button type="submit">Enter in raffle</Button>
+                            </form>
+                          )
                         )}
                       </li>
                     );
@@ -218,6 +265,12 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
                   <p className="text-sm text-muted-foreground">
                     <span className="font-mono">{e.memberNumber}</span> · {e.homeStore}
                   </p>
+                  {choices.get(e.id)?.length ? (
+                    <p className="mt-0.5 text-sm">
+                      <span className="text-muted-foreground">Wants: </span>
+                      {choices.get(e.id)!.map((c, i) => `${i + 1}. ${c}`).join("  ·  ")}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="text-right text-sm text-muted-foreground">
                   <p>{e.channel === "online" ? "Online" : e.enteredBy ? `In store · ${e.enteredBy}` : "In store"}</p>

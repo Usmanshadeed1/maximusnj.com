@@ -14,6 +14,8 @@ import {
 } from "@/server/actions/raffle-results";
 import type { ResultView } from "@/server/raffles";
 import type { WinnerOutcome } from "@/types/database";
+import type { PickerProduct } from "@/components/raffles/choice-picker";
+import { AssignProductForm } from "../../product-parts";
 import { ClaimDialog, ConfirmSubmitButton } from "./result-dialogs";
 
 const OUTCOME_LABEL: Record<WinnerOutcome, string> = {
@@ -52,6 +54,8 @@ export function ResultsCard({
   stores,
   defaultStoreId,
   emailReady,
+  products,
+  choices,
 }: {
   releaseId: string;
   raffleId: string;
@@ -62,7 +66,11 @@ export function ResultsCard({
   stores: { id: string; name: string }[];
   defaultStoreId: string;
   emailReady: boolean;
+  products: PickerProduct[];
+  /** Entry id → the products that person asked for, in their order. */
+  choices: Record<string, string[]>;
 }) {
+  const productNames = new Map(products.map((p) => [p.id, p.name]));
   const live = results.filter((r) => r.isWinner && ["pending", "notified", "claimed"].includes(r.outcome)).length;
   const hasMoreOnList = results.some((r) => !r.isWinner);
   const canPromote = !completed && live < winnerCount && hasMoreOnList;
@@ -160,6 +168,15 @@ export function ResultsCard({
                   <span className="font-mono">{r.memberNumber}</span> · {r.homeStore}
                   {r.channel && ` · ${r.channel === "online" ? "Entered online" : "Entered in store"}`}
                 </p>
+                {choices[r.entryId]?.length ? (
+                  <p className="mt-1 text-sm">
+                    <span className="text-muted-foreground">Wants: </span>
+                    {choices[r.entryId].map((c, i) => `${i + 1}. ${c}`).join("  ·  ")}
+                  </p>
+                ) : null}
+                {r.assignedProductId && (
+                  <p className="mt-1 text-sm font-semibold text-success">Given: {productNames.get(r.assignedProductId) ?? "a product"}</p>
+                )}
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   {r.isWinner ? (
                     <>
@@ -187,6 +204,10 @@ export function ResultsCard({
                   )}
                 </div>
               </div>
+
+              {!completed && products.length > 0 && (
+                <AssignProductForm releaseId={releaseId} raffleId={raffleId} resultId={r.id} products={products} assignedId={r.assignedProductId} />
+              )}
 
               {acting && (
                 <div className="flex flex-wrap items-center gap-2">

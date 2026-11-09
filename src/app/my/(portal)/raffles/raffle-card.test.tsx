@@ -23,6 +23,8 @@ const raffle = (overrides: Partial<PortalRaffle> = {}): PortalRaffle => ({
   entered: false,
   enteredOther: false,
   removed: false,
+  products: [],
+  myChoices: [],
   result: null,
   ...overrides,
 });
@@ -80,10 +82,11 @@ describe("RaffleCard after the draw", () => {
     render(raffle({ phase: "drawn", entered: true, result, ...extra }));
 
   it("tells a winner where to collect and by when, with no Withdraw button", () => {
-    const html = drawn({ state: "won", deadline_at: "2026-12-07T23:30:00Z" }, { pickup: "Hoboken" });
+    const html = drawn({ state: "won", deadline_at: "2026-12-07T23:30:00Z", product: "Elite Trainer Box" }, { pickup: "Hoboken" });
     expect(html).toContain("You won!");
     expect(html).toContain("Hoboken");
     expect(html).toContain("Dec 7, 2026");
+    expect(html).toContain("Elite Trainer Box");
     expect(html).not.toContain("Withdraw my entry");
   });
 
@@ -94,7 +97,8 @@ describe("RaffleCard after the draw", () => {
   });
 
   it("covers every other result in plain words", () => {
-    expect(drawn({ state: "collected" })).toContain("You collected your prize");
+    expect(drawn({ state: "collected", product: null })).toContain("You collected your prize");
+    expect(drawn({ state: "collected", product: "Booster Box" })).toContain("You collected Booster Box");
     expect(drawn({ state: "expired" })).toContain("The time to collect ended");
     expect(drawn({ state: "declined" })).toContain("You passed on this spot");
     expect(drawn({ state: "not_selected" })).toContain("You weren&#x27;t selected this time");
@@ -102,5 +106,26 @@ describe("RaffleCard after the draw", () => {
 
   it("never shows a draw position", () => {
     expect(drawn({ state: "waiting" }).toLowerCase()).not.toContain("position");
+  });
+});
+
+describe("RaffleCard with products", () => {
+  const products = [
+    { id: "p1", name: "Booster Box", description: null, image_url: null },
+    { id: "p2", name: "Elite Trainer Box", description: null, image_url: null },
+  ];
+
+  it("lists the products and asks the member to choose before entering", () => {
+    const html = render(raffle({ products }));
+    expect(html).toContain("Booster Box · Elite Trainer Box");
+    expect(html).toContain("Choose products and enter");
+    expect(html).not.toContain(">Enter the raffle<");
+  });
+
+  it("shows the member's own choices, in their order, once entered", () => {
+    const html = render(raffle({ products, entered: true, myChoices: ["Elite Trainer Box", "Booster Box"] }));
+    expect(html).toContain("Your choices");
+    expect(html.indexOf("Elite Trainer Box")).toBeLessThan(html.lastIndexOf("Booster Box"));
+    expect(html).toContain("Withdraw my entry");
   });
 });

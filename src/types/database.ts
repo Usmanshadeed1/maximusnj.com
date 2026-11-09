@@ -429,6 +429,22 @@ export type RaffleEntryRow = {
   ended_at: string | null;
 };
 
+export type ProductRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RaffleProductRow = { raffle_id: string; product_id: string; position: number };
+export type RaffleEntryChoiceRow = { entry_id: string; rank: number; product_id: string };
+
+export type PortalProduct = { id: string; name: string; description: string | null; image_url: string | null };
+
 export type WinnerOutcome = "pending" | "notified" | "claimed" | "expired" | "declined";
 
 export type RaffleDrawResultRow = {
@@ -447,6 +463,7 @@ export type RaffleDrawResultRow = {
   transaction_id: string | null;
   handled_by: string | null;
   handled_note: string | null;
+  assigned_product_id: string | null;
   created_at: string;
 };
 
@@ -478,8 +495,8 @@ export type EmailQueueRow = {
 /** A member's own result in a drawn raffle. Never a position, never anyone else's. */
 export type PortalRaffleResult =
   | { state: "waiting" }
-  | { state: "won"; deadline_at: string | null }
-  | { state: "collected" }
+  | { state: "won"; deadline_at: string | null; product: string | null }
+  | { state: "collected"; product: string | null }
   | { state: "expired" }
   | { state: "declined" }
   | { state: "not_selected" };
@@ -499,6 +516,8 @@ export type PortalRaffleJson = {
   entered: boolean;
   entered_other: boolean;
   removed: boolean;
+  products: PortalProduct[];
+  my_choices: string[];
   result: PortalRaffleResult | null;
 };
 
@@ -550,6 +569,9 @@ export type Database = {
       raffle_entries: ReadOnlyTable<RaffleEntryRow>;
       raffle_draw_results: ReadOnlyTable<RaffleDrawResultRow>;
       notifications: ReadOnlyTable<NotificationRow>;
+      products: ReadOnlyTable<ProductRow>;
+      raffle_products: ReadOnlyTable<RaffleProductRow>;
+      raffle_entry_choices: ReadOnlyTable<RaffleEntryChoiceRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -737,7 +759,7 @@ export type Database = {
       };
       publish_raffle: { Args: { p_id: string }; Returns: RaffleRow };
       cancel_raffle: { Args: { p_id: string; p_reason: string }; Returns: RaffleRow };
-      staff_enter_raffle: { Args: { p_raffle_id: string; p_customer_id: string }; Returns: RaffleEntryRow };
+      staff_enter_raffle: { Args: { p_raffle_id: string; p_customer_id: string; p_choices?: string[] }; Returns: RaffleEntryRow };
       remove_raffle_entry: { Args: { p_entry_id: string; p_reason: string }; Returns: RaffleEntryRow };
       export_customer_data: { Args: { p_customer_id: string }; Returns: Record<string, unknown> };
       anonymize_customer: { Args: { p_customer_id: string; p_reason: string }; Returns: { auth_user_id: string | null } };
@@ -771,7 +793,14 @@ export type Database = {
       };
       complete_raffle: { Args: { p_raffle_id: string }; Returns: RaffleRow };
       portal_raffles: { Args: Record<string, never>; Returns: PortalRaffleJson[] | null };
-      portal_enter_raffle: { Args: { p_raffle_id: string }; Returns: boolean };
+      portal_enter_raffle: { Args: { p_raffle_id: string; p_choices?: string[] }; Returns: boolean };
+      create_product: { Args: { p_name: string; p_description?: string | null; p_image_url?: string | null }; Returns: ProductRow };
+      update_product: {
+        Args: { p_id: string; p_name: string; p_description: string | null; p_image_url: string | null; p_is_active: boolean };
+        Returns: ProductRow;
+      };
+      set_raffle_products: { Args: { p_raffle_id: string; p_product_ids: string[] }; Returns: number };
+      assign_raffle_product: { Args: { p_result_id: string; p_product_id: string | null }; Returns: RaffleDrawResultRow };
       portal_withdraw_entry: { Args: { p_raffle_id: string }; Returns: boolean };
       rate_limit_hit: { Args: { p_key: string; p_max: number; p_window_seconds: number }; Returns: boolean };
       bootstrap_owner: {

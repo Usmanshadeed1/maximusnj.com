@@ -141,9 +141,17 @@ const RAFFLE_MESSAGES: Record<string, string> = {
   entry_removed: "Please ask a team member in store about your entry.",
   customer_inactive: "Your membership is paused. Please visit a store.",
   not_active: "You don't have an entry in this raffle.",
+  choices_required: "Pick at least one product.",
+  choices_duplicate: "Each product can only be picked once.",
+  choice_invalid: "One of those products is no longer offered. Refresh the page and try again.",
 };
 
-async function raffleCall(raffleId: unknown, rpc: "portal_enter_raffle" | "portal_withdraw_entry", done: string): Promise<ActionState> {
+async function raffleCall(
+  raffleId: unknown,
+  rpc: "portal_enter_raffle" | "portal_withdraw_entry",
+  done: string,
+  choices: string[] = [],
+): Promise<ActionState> {
   const access = await getMemberAccess();
   if (access.status !== "member") return { error: "Please sign in again." };
   const id = z.uuid().safeParse(raffleId);
@@ -153,14 +161,18 @@ async function raffleCall(raffleId: unknown, rpc: "portal_enter_raffle" | "porta
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc(rpc, { p_raffle_id: id.data });
+  const cleanChoices = choices.filter((c) => z.uuid().safeParse(c).success);
+  const { error } =
+    rpc === "portal_enter_raffle"
+      ? await supabase.rpc(rpc, { p_raffle_id: id.data, p_choices: cleanChoices })
+      : await supabase.rpc(rpc, { p_raffle_id: id.data });
   revalidatePath("/my/raffles");
   if (error) return { error: RAFFLE_MESSAGES[error.message] ?? "Something went wrong. Please try again." };
   return { ok: true, message: done };
 }
 
-export async function enterRaffleAction(raffleId: string): Promise<ActionState> {
-  return raffleCall(raffleId, "portal_enter_raffle", "You're in! Good luck.");
+export async function enterRaffleAction(raffleId: string, choices: string[] = []): Promise<ActionState> {
+  return raffleCall(raffleId, "portal_enter_raffle", "You're in! Good luck.", Array.isArray(choices) ? choices.slice(0, 50) : []);
 }
 
 export async function withdrawRaffleAction(raffleId: string): Promise<ActionState> {

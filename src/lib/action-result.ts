@@ -107,6 +107,11 @@ const DB_MESSAGES: Record<string, string> = {
   unresolved_winners: "Some winners are still waiting. Mark each as claimed, expired or declined first.",
   draw_immutable: "The draw result can't be changed.",
   customer_anonymized: "This member's personal details were erased, so they can't be changed.",
+  product_invalid: "Choose a product from the list (turned-off products can't be used).",
+  products_in_use: "People have already entered, so a product can't be taken off this raffle. You can still add products.",
+  choices_required: "Pick at least one product.",
+  choices_duplicate: "Each product can only be picked once.",
+  choice_invalid: "Pick only products this raffle offers.",
   range_invalid: "Choose a start date that is on or before the end date (at most one year apart).",
   store_has_history:
     "This store has customers, visits or staff, so it can't be deleted without losing their history. Deactivate it instead.",

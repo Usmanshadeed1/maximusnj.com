@@ -548,6 +548,14 @@ During the current month, the staff app and the portal show:
 4. A raffle shows the release name, description, optional image and number of winners.
 5. Members can withdraw before closing. Staff can remove entries with a logged reason.
 
+### 10.10 Raffle products ✅ (client request, after Step 12)
+
+- **Products** (staff menu, Owner and Managers): a list of the items the store raffles: name, optional description and picture. A product can be turned off (it then can't be added to new raffles; raffles that already offer it keep it). Names are unique.
+- **A raffle can offer several products**, chosen (in order) when it is set up or later on the raffle page. Before anyone has entered the list can change freely; afterwards products can only be **added**. A raffle with no products works as before (one item).
+- **Members rank the products they want** when they enter: they tap them in order of preference (1st, 2nd, 3rd…), at least one. Staff entering someone in store record the ranking the same way. The member page shows their choices.
+- **After the draw**, the ranked list (#1 to the last) shows each person's choices next to their position. **Staff give each person a product by hand** ("Give"), and can change or take it back until the raffle is finished. The app does **not** pick products automatically. A winner sees the product they were given; the CSV export includes everyone's choices and the product given. Every change is audit-logged.
+- Not built (by decision): automatic assignment by position and choice, product prices, quantity per product.
+
 ---
 
 ## 11. Customer self-service portal ✅
@@ -1256,3 +1264,4 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 54 | Migration scope | Customers, visits and transactions are imported with their ids and legacy member numbers; paid memberships, old audit log and login links are archived; staff are re-invited; tiers are recalculated afterwards |
 | 55 | Step 11 paused | The old-system move is skipped for now; it is needed only if the old members site holds real customers. The tools stay ready (`npm run migrate`) |
 | 56 | Erasing a member | The Owner can download a member's data or erase their personal details (reason + typed member number); sales and visits stay under the member number |
+| 57 | Raffle products | Owner/Managers keep a product list; a raffle offers several; members rank the ones they want; staff assign a product to each person by hand after the draw (no automatic assignment, no prices) |

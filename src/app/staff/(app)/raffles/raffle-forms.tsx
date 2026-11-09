@@ -16,6 +16,8 @@ import {
   updateRaffleAction,
   updateReleaseAction,
 } from "@/server/actions/raffles";
+import type { PickerProduct } from "@/components/raffles/choice-picker";
+import { RaffleProductsField } from "./product-parts";
 import { type RaffleFieldValues, RaffleFields } from "./raffle-fields";
 
 type StoreOption = { id: string; name: string };
@@ -56,10 +58,12 @@ export function NewReleaseForm({
   stores,
   canCompany,
   initial,
+  products,
 }: {
   stores: StoreOption[];
   canCompany: boolean;
   initial: RaffleFieldValues;
+  products: PickerProduct[];
 }) {
   const [state, formAction, pending] = useActionState(createReleaseAction, idleState);
   const errors = state.fieldErrors ?? {};
@@ -70,6 +74,7 @@ export function NewReleaseForm({
         <h2 className="mb-4 text-base font-bold text-brand-navy-deep">The release</h2>
         <ReleaseFields initial={{ name: "", description: "", imageUrl: "", releaseDate: "" }} errors={errors} autoFocus />
       </Card>
+      <RaffleProductsField products={products} />
       <RaffleFields initial={initial} stores={stores} canCompany={canCompany} multiStore errors={errors} />
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Link href="/staff/raffles" className={buttonVariants({ variant: "outline", size: "lg" })}>
@@ -89,17 +94,20 @@ export function AddRafflesForm({
   stores,
   canCompany,
   initial,
+  products,
 }: {
   releaseId: string;
   stores: StoreOption[];
   canCompany: boolean;
   initial: RaffleFieldValues;
+  products: PickerProduct[];
 }) {
   const [state, formAction, pending] = useActionState(addRafflesAction, idleState);
   return (
     <form noValidate className="flex flex-col gap-5" onSubmit={manualSubmit(formAction)}>
       <input type="hidden" name="releaseId" value={releaseId} />
       <FormMessage state={state} />
+      <RaffleProductsField products={products} />
       <RaffleFields initial={initial} stores={stores} canCompany={canCompany} multiStore errors={state.fieldErrors ?? {}} />
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Link href={`/staff/raffles/${releaseId}`} className={buttonVariants({ variant: "outline", size: "lg" })}>

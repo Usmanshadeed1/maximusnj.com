@@ -39,6 +39,12 @@ export default async function ReleasePage({ params, searchParams }: PageProps<"/
         </div>
       )}
 
+      {flags.products === "failed" && (
+        <div role="alert" className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3.5 text-sm font-medium text-amber-900">
+          The raffle was created, but its products could not be saved. Open the raffle and press Change products.
+        </div>
+      )}
+
       <Card className="p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 gap-4">

@@ -113,6 +113,8 @@ export type EntryView = {
 /** One line of the ranked list after the draw. */
 export type ResultView = {
   id: string;
+  entryId: string;
+  assignedProductId: string | null;
   position: number;
   isWinner: boolean;
   outcome: WinnerOutcome;
@@ -168,6 +170,8 @@ async function getResults(raffleId: string, names: Map<string, string>): Promise
     const c = customers.get(r.customer_id);
     return {
       id: r.id,
+      entryId: r.entry_id,
+      assignedProductId: r.assigned_product_id,
       position: r.position,
       isWinner: r.is_winner,
       outcome: r.outcome,

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireEmployee } from "@/server/auth";
+import { getProducts } from "@/server/products";
 import { getRelease, getStoresForRaffles } from "@/server/raffles";
 import { newRaffleDefaults } from "../../defaults";
 import { AddRafflesForm } from "../../raffle-forms";
@@ -21,6 +22,7 @@ export default async function AddRafflePage({ params }: PageProps<"/staff/raffle
   const hasCompany = release.raffles.some((r) => r.scope === "company" && r.status !== "cancelled");
   const hasAny = release.raffles.some((r) => r.status !== "cancelled");
   const available = stores.filter((s) => !taken.has(s.id));
+  const products = (await getProducts()).map((p) => ({ id: p.id, name: p.name, description: p.description, imageUrl: p.image_url }));
 
   return (
     <div className="w-full max-w-3xl">
@@ -41,6 +43,7 @@ export default async function AddRafflePage({ params }: PageProps<"/staff/raffle
           // A company-wide raffle is only possible when the release has no other raffles yet.
           canCompany={employee.role === "owner" && !hasAny}
           initial={newRaffleDefaults()}
+          products={products}
         />
       )}
     </div>

@@ -10,6 +10,10 @@ export type CsvResultRow = {
   outcome: string;
   notifiedVia: string | null;
   notifiedAt: string | null;
+  /** The products they asked for, in their order. */
+  choices?: string[];
+  /** The product staff gave them. */
+  product?: string | null;
 };
 
 /**
@@ -39,7 +43,7 @@ function when(value: string | null): string {
 
 /** The ranked list as CSV (§10.4): position, name, member number, home store, entry method, outcome. */
 export function buildResultsCsv(rows: CsvResultRow[]): string {
-  const header = ["Position", "Winner", "Name", "Member number", "Home store", "Entered", "Outcome", "Told by", "Told at (New York)"];
+  const header = ["Position", "Winner", "Name", "Member number", "Home store", "Entered", "Outcome", "Told by", "Told at (New York)", "Choices (in order)", "Product given"];
   const lines = rows.map((r) =>
     [
       r.position,
@@ -51,6 +55,8 @@ export function buildResultsCsv(rows: CsvResultRow[]): string {
       r.isWinner ? r.outcome : "Not offered",
       r.notifiedVia ?? "",
       when(r.notifiedAt),
+      (r.choices ?? []).map((c, i) => `${i + 1}. ${c}`).join("; "),
+      r.product ?? "",
     ]
       .map(csvCell)
       .join(","),

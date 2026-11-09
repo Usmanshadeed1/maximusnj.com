@@ -116,3 +116,8 @@ export function canCreateRaffles(actor: EmployeeRole): boolean {
 export function canViewReports(actor: EmployeeRole): boolean {
   return actor === "owner" || actor === "manager";
 }
+
+/** Owner and Managers keep the product list used by raffles. */
+export function canManageProducts(actor: EmployeeRole): boolean {
+  return actor === "owner" || actor === "manager";
+}
