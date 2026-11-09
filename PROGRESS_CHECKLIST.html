@@ -144,14 +144,17 @@ const STEPS = [
       "Click Remove override. They are back to Base.",
       "Open the Audit log. Tier rules updated, Tier set by hand and Tier override removed are listed."
     ] },
-  { n: 6, status: "not-started", name: "Monthly tier update",
+  { n: 6, status: "ready-to-test", name: "Monthly tier update",
     goal: "Tiers update automatically at midnight on the 1st of every month (New York time).",
     tests: [
-      "Add activity for a test customer this month.",
-      "Click \"Run month-end now\" (Test tools). The current tier updates as expected.",
-      "Click it again. Nothing is duplicated.",
-      "A customer with no activity drops to Base.",
-      "Recalculate one customer with a reason. The history shows the old and new record."
+      "Open Monthly update in the menu. You see a green Everything is working (or, in the first hour, an amber hasn't run yet) and the date of the next automatic update.",
+      "Record a $350 purchase and a check-in for a test member. On Monthly update, under Test tools, choose next month and press Run month-end test. It says how many members were decided.",
+      "Open that member. Monthly tiers shows next month with Silver, a Test label, and what it was decided from.",
+      "Press the test again. It says nothing to do. Nobody is duplicated.",
+      "A member with no activity shows the starting tier for next month.",
+      "Record another $400 purchase for the first member. On their profile click Recalculate, choose next month, write a reason. They are now Gold, with Earlier result replaced: Silver kept underneath.",
+      "Open the Audit log. The month-end test and the recalculation are listed.",
+      "Within about an hour, an Automatic update for this month appears in Recent updates by itself."
     ] },
   { n: 7, status: "not-started", name: "Customer portal",
     goal: "Customers log in with their email and see their tier, progress and history.",

@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { History, IdCard, LayoutDashboard, Menu, Receipt, ScanLine, SlidersHorizontal, Store, Users, X } from "lucide-react";
+import { History, IdCard, LayoutDashboard, Menu, Receipt, RefreshCw, ScanLine, SlidersHorizontal, Store, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type NavKey = "dashboard" | "customers" | "transactions" | "kiosk" | "stores" | "employees" | "tiers" | "audit";
+export type NavKey = "dashboard" | "customers" | "transactions" | "kiosk" | "stores" | "employees" | "tiers" | "monthly" | "audit";
 
 const ITEMS: Record<NavKey, { href: string; label: string; icon: typeof Store }> = {
   dashboard: { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +16,7 @@ const ITEMS: Record<NavKey, { href: string; label: string; icon: typeof Store }>
   stores: { href: "/staff/stores", label: "Stores", icon: Store },
   employees: { href: "/staff/employees", label: "Employees", icon: Users },
   tiers: { href: "/staff/settings/tiers", label: "Tier settings", icon: SlidersHorizontal },
+  monthly: { href: "/staff/settings/monthly-update", label: "Monthly update", icon: RefreshCw },
   audit: { href: "/staff/audit", label: "Audit log", icon: History },
 };
 

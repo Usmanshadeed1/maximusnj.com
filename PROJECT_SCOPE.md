@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 5 — Tier engine and Tier Settings
+> **Current step:** Steps 5 and 6 — Tier engine & Tier Settings, and the Monthly tier update (testing together)
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -456,6 +456,18 @@ During the current month, the staff app and the portal show:
 - Finalized awards are **never silently changed**.
 - The Owner can run a **manual recalculation** for one customer or all customers for a given month. It requires a written reason. It creates a **new award record that supersedes the old one** (the old one is kept). It is audit-logged.
 
+### 9.5 Step 6 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **Schedule:** the database checks **every hour at :05**. The month is taken from the **New York clock**, so the update starts at 12:05 AM New York time on the 1st in summer and winter. Once the month's update has succeeded, the hourly check does nothing; if it hasn't (the server was down, or it failed) the next hour tries again by itself.
+- **Who is decided:** every member who existed when the update started and has not been merged away, including inactive members and members with no activity at all. A member who joins after the update started has no award yet and is at the starting tier until the next update.
+- **What decides it:** the activity of the month **before** the awarded month (and the months before that, if the look-back is longer), using the rule version that applies to the awarded month. November activity decides December.
+- **Safe to run again:** a member who already has the month's award is skipped. Awards are history: the database refuses to edit or delete a saved award.
+- **A failed update** is recorded with the reason and everything it started is undone. The Owner sees a red message on the dashboard and on the Monthly update page. ⚠️ **Not built yet:** the Sentry and e-mail alerts from §9.3. They need the e-mail service and Sentry to be connected (a later step); the in-app message and the automatic hourly retry are in place.
+- **Recalculation (§9.4):** the Owner picks a month (this month or earlier) and writes a reason. The month is decided again from the data as it is today. Only members whose answer **differs** get a new award; the old award stays in the history, marked replaced. It never changes later months by itself (the Owner recalculates those separately). One member or everyone; everyone produces one audit entry, one member produces one entry with the before and after tier.
+- **Test tools (staging only):** the Monthly update page has a "Month-end test" the Owner can run for **this month or next month**. Its awards are marked **Test**; the real update replaces them automatically, and a test never replaces a real award. The database refuses test runs unless `app_settings.test_tools_enabled` is true. It is **false by default** and is switched on only for the test site. **Step 12 must confirm it is false in production.**
+- **Current tier** = an Owner override, else this month's award, else the starting tier.
+- **Evidence kept on every award:** the awarded month, the month(s) that decided it, spend, visit days, visit bonus, score, carry in and out, whether the requirements were met, the rule version, the calculation version, who or what made it (automatic, by hand, test or recalculation), the run, and the time.
+
 ---
 
 ## 10. Raffles for new releases ✅
@@ -580,6 +592,7 @@ During the current month, the staff app and the portal show:
   - Reports
   - Store settings (Owner)
   - Tier settings (Owner)
+  - Monthly update (Owner)
   - Employees
   - Audit log (Owner)
 - **Clear error messages** for:
@@ -666,8 +679,8 @@ All tables have `id uuid` primary keys (except where noted), `created_at timesta
 | `tier_rule_sets` | `version` (unique), `effective_from_month`, `visit_value_cents`, `lookback_months` ≥ 1, `lookback_method` (`average`,`every_month`), `carry_over_enabled` (check: requires `lookback_months = 1`), `require_purchase`, `require_visit`, `created_by` |
 | `tier_thresholds` | `rule_set_id`, `tier_key` (`base`,`silver`,`gold`,`diamond`), `display_name`, `rank`, `threshold_cents`, `benefits_text`; thresholds must increase with rank, and Base = 0 |
 | `tier_overrides` | `customer_id`, `tier_key`, `reason`, `last_month` (null = until removed), `created_by`, `created_at`, `removed_at`, `removed_by`, `removal_reason`; **one open row per customer** |
-| `monthly_tier_awards` | `customer_id`, `qualifying_month`, `awarded_month`, `tier_key`, `rule_set_id`, `net_spend_cents`, `qualifying_visits`, `visit_points_cents`, `score_cents`, `carry_in_cents`, `carry_out_cents`, `calc_version`, `run_id`, `is_current`, `superseded_by`, `reason`, `calculated_at`; **unique (`customer_id`, `awarded_month`) where `is_current`** |
-| `tier_rollover_runs` | `awarded_month`, `status`, `started_at`, `finished_at`, `customers_processed`, `error` |
+| `monthly_tier_awards` | `customer_id`, `qualifying_month`, `awarded_month`, `tier_key`, `rule_set_id`, `net_spend_cents`, `qualifying_visits`, `visit_points_cents`, `score_cents`, `carry_in_cents`, `carry_out_cents`, `requirements_met`, `evidence` (the months used), `calc_version`, `run_id`, `source` (`scheduled`,`manual`,`test`,`recalculation`), `is_test`, `is_current`, `superseded_by`, `reason`, `calculated_by`, `calculated_at`; **unique (`customer_id`, `awarded_month`) where `is_current`**; never edited or deleted |
+| `tier_rollover_runs` | `awarded_month`, `source` (`scheduled`,`manual`,`test`), `status` (`running`,`succeeded`,`failed`), `customers_processed`, `customers_skipped`, `summary` (members per tier), `error`, `started_by`, `started_at`, `finished_at` |
 | `raffle_releases` | `name`, `description`, `image_url`, `release_date`, `created_by` |
 | `raffles` | `release_id`, `scope` (`store`,`company`), `location_id` (null when company), `pickup_rule`, `winner_count` > 0, `opens_at`, `closes_at`, `claim_deadline_hours`, `allowed_channels` text[], `status`, `drawn_at`, `drawn_by`; check `closes_at > opens_at` |
 | `raffle_entries` | `raffle_id`, `release_id`, `customer_id`, `channel` (`online`,`in_store`), `entered_by_employee_id`, `status` (`active`,`withdrawn`,`removed`), `removed_reason`; **unique (`release_id`, `customer_id`) where `status = 'active'`** |
@@ -867,12 +880,15 @@ This lets the owner test monthly features without waiting a month.
 - Midnight New York boundary, **including the daylight-saving months**.
 - A recalculation keeps the old record.
 
-**Owner test (using Test tools on staging):**
-1. Add activity for a test customer in the current month.
-2. Click "Run month-end now". The customer's **current tier** changes for next month as expected.
-3. Click it again. Nothing is duplicated.
-4. A customer with no activity drops to Base.
-5. As the Owner, recalculate one customer with a reason. The history shows both the old and the new record.
+**Owner test (the Test tools exist only on the test site):**
+1. Open **Monthly update** in the menu. A green **"Everything is working"** (or, in the first hour, an amber "hasn't run yet") and the date of the next automatic update.
+2. Record a **$350 purchase** and a **check-in** for a test member. On Monthly update, under **Test tools**, choose **next month** and press **Run month-end test**. It says how many members were decided.
+3. Open that member. **Monthly tiers** shows next month with **Silver**, a **Test** label, and "Decided from this month: $350.00 spent, 1 visit day".
+4. Press the test again. It says **nothing to do**. Nobody is duplicated.
+5. A member with no activity shows the starting tier for next month.
+6. Record another **$400** purchase for the first member. On their profile click **Recalculate**, choose next month, write a reason. They are now **Gold**, with **"Earlier result, replaced: Silver"** kept underneath.
+7. Open the **Audit log**: the month-end test and the recalculation are listed.
+8. Within about an hour, an **Automatic** update for this month appears in **Recent updates** by itself.
 
 ---
 
@@ -1006,6 +1022,7 @@ This lets the owner test monthly features without waiting a month.
 
 **Build:**
 - Production deploy and DNS.
+- **Confirm the test tools are OFF in production** (`app_settings.test_tools_enabled` = false).
 - Administrator training guide.
 - UAT checklist.
 - Ownership and credentials document (Section 13).
@@ -1127,3 +1144,6 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 33 | Tier rules are versioned | Saving always creates a new version that starts next month; the current month never changes. Built in Step 5 |
 | 34 | Override lasts | Until the Owner removes it, or until the end of a month the Owner picks. The monthly update doesn't replace it while active |
 | 35 | Printed card | The printed member card shows no tier (it changes monthly); the on-screen card does |
+| 36 | Monthly update schedule | Checked every hour at :05 by the database, month taken from the New York clock; retried hourly until it succeeds; the Owner can also run it by hand. Built in Step 6 |
+| 37 | Test tools | A month-end simulator for the test site only; its results are marked Test and replaced by the real update. Off by default in the database |
+| 38 | Corrections | Recalculating replaces only results that differ, keeps the old ones, needs a reason, and never touches later months by itself |

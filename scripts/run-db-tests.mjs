@@ -176,7 +176,12 @@ try {
       c.carryIn,
     );
     const db = row.res;
-    if (db.tier_key !== ts.tier || Number(db.score_cents) !== ts.scoreCents || Number(db.carry_out_cents) !== ts.carryOutCents) {
+    if (
+      db.tier_key !== ts.tier ||
+      Number(db.score_cents) !== ts.scoreCents ||
+      Number(db.carry_out_cents) !== ts.carryOutCents ||
+      db.requirements_met !== ts.requirementsMet
+    ) {
       if (mismatches++ < 3) {
         console.error("MISMATCH", JSON.stringify(c), "\n  database:", JSON.stringify(db), "\n  typescript:", JSON.stringify(ts));
       }

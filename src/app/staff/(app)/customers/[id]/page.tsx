@@ -14,10 +14,12 @@ import { canChangeCustomerStatus, canManageTiers, canMergeCustomers, canVoidTran
 import { formatPhone } from "@/lib/phone";
 import { requireEmployee } from "@/server/auth";
 import { getCustomer, getVisitSummary } from "@/server/customers";
+import { getAwardHistory, isTestToolsEnabled } from "@/server/tier-awards";
 import { getCustomerTierView } from "@/server/tiers";
 import { getSpend, getTransactions } from "@/server/transactions";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
 import { SpendingCard, TransactionsCard } from "./spending-cards";
+import { MonthlyTiersCard } from "./monthly-tiers-card";
 import { TierCard } from "./tier-card";
 
 export const metadata: Metadata = { title: "Customer" };
@@ -27,12 +29,14 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const [customer, visits, spend, transactions, tierView] = await Promise.all([
+  const [customer, visits, spend, transactions, tierView, awards, testTools] = await Promise.all([
     getCustomer(id),
     getVisitSummary(id),
     getSpend(id),
     getTransactions(id),
     getCustomerTierView(id),
+    getAwardHistory(id),
+    canManageTiers(employee.role) ? isTestToolsEnabled() : Promise.resolve(false),
   ]);
   if (!customer) notFound();
 
@@ -46,6 +50,15 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
     const value = addMonths(thisMonth, i);
     return { value, label: `${formatMonthYear(value)}${i === 0 ? " (this month)" : ""}` };
   });
+  // Months an Owner can decide again: this month and the 11 before it.
+  const recalcOptions = [
+    // On a test site the Owner can also correct next month's test result.
+    ...(testTools ? [{ value: addMonths(thisMonth, 1), label: `${formatMonthYear(addMonths(thisMonth, 1))} (next month, test)` }] : []),
+    ...Array.from({ length: 12 }, (_, i) => {
+      const value = addMonths(thisMonth, -i);
+      return { value, label: `${formatMonthYear(value)}${i === 0 ? " (this month)" : ""}` };
+    }),
+  ];
 
   return (
     <>
@@ -126,10 +139,21 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
           {!isMerged && (
             <TierCard
               view={tierView}
+              awards={awards}
               customerId={customer.id}
               customerName={name}
               canManage={canManageTiers(employee.role)}
               monthOptions={monthOptions}
+            />
+          )}
+
+          {!isMerged && (
+            <MonthlyTiersCard
+              awards={awards}
+              customerId={customer.id}
+              customerName={name}
+              canManage={canManageTiers(employee.role)}
+              monthOptions={recalcOptions}
             />
           )}
 

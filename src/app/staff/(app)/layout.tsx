@@ -18,7 +18,7 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
   const nav: NavKey[] = ["dashboard", "customers", "transactions", "kiosk"];
   if (canManageLocations(employee.role)) nav.push("stores");
   if (canViewEmployees(employee.role)) nav.push("employees");
-  if (canManageTiers(employee.role)) nav.push("tiers");
+  if (canManageTiers(employee.role)) nav.push("tiers", "monthly");
   if (canViewAuditLog(employee.role)) nav.push("audit");
 
   return (

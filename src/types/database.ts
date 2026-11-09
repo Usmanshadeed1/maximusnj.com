@@ -182,6 +182,66 @@ export type TierRulesOverview = {
   history: TierRuleSetJson[];
 };
 
+export type AwardSource = "scheduled" | "manual" | "test" | "recalculation";
+
+export type MonthlyTierAwardRow = {
+  id: string;
+  customer_id: string;
+  qualifying_month: string;
+  awarded_month: string;
+  tier_key: TierKey;
+  rule_set_id: string;
+  net_spend_cents: number;
+  qualifying_visits: number;
+  visit_points_cents: number;
+  score_cents: number;
+  carry_in_cents: number;
+  carry_out_cents: number;
+  requirements_met: boolean;
+  evidence: {
+    months: { month: string; spend_cents: number; visits: number }[];
+    lookback_months: number;
+    method: LookbackMethod;
+    carry_over: boolean;
+    visit_value_cents: number;
+  };
+  calc_version: number;
+  run_id: string | null;
+  source: AwardSource;
+  is_test: boolean;
+  is_current: boolean;
+  superseded_by: string | null;
+  reason: string | null;
+  calculated_by: string | null;
+  calculated_at: string;
+};
+
+export type RolloverRunRow = {
+  id: string;
+  awarded_month: string;
+  source: "scheduled" | "manual" | "test";
+  status: "running" | "succeeded" | "failed";
+  customers_processed: number;
+  customers_skipped: number;
+  summary: Partial<Record<TierKey, number>> | null;
+  error: string | null;
+  started_by: string | null;
+  started_at: string;
+  finished_at: string | null;
+};
+
+export type RolloverResult = {
+  status: "succeeded" | "failed" | "already_running";
+  run_id?: string;
+  awarded_month: string;
+  processed?: number;
+  skipped?: number;
+  summary?: Partial<Record<TierKey, number>> | null;
+  error?: string | null;
+};
+
+export type RecalculateResult = { awarded_month: string; members: number; changed: number; unchanged: number };
+
 export type TierProjectionJson = {
   month: string;
   next_month: string;
@@ -244,6 +304,8 @@ export type Database = {
       tier_rule_sets: ReadOnlyTable<TierRuleSetRow>;
       tier_thresholds: ReadOnlyTable<TierThresholdRow>;
       tier_overrides: ReadOnlyTable<TierOverrideRow>;
+      monthly_tier_awards: ReadOnlyTable<MonthlyTierAwardRow>;
+      tier_rollover_runs: ReadOnlyTable<RolloverRunRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -318,6 +380,18 @@ export type Database = {
       merge_customers: {
         Args: { p_source_id: string; p_target_id: string; p_reason: string };
         Returns: CustomerRow;
+      };
+      run_month_rollover_now: {
+        Args: Record<string, never>;
+        Returns: RolloverResult;
+      };
+      run_test_rollover: {
+        Args: { p_awarded_month: string };
+        Returns: RolloverResult;
+      };
+      recalculate_awards: {
+        Args: { p_awarded_month: string; p_reason: string; p_customer_id?: string | null };
+        Returns: RecalculateResult;
       };
       tier_rules_overview: {
         Args: Record<string, never>;

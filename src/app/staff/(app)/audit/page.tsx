@@ -35,6 +35,10 @@ const ACTION_LABELS: Record<string, string> = {
   "tier_rules.update": "Tier rules updated",
   "customer.tier_override_set": "Tier set by hand",
   "customer.tier_override_clear": "Tier override removed",
+  "tier_rollover.run": "Monthly tier update ran",
+  "tier_rollover.test_run": "Month-end test run",
+  "tier_awards.recalculate": "Tiers recalculated",
+  "customer.tier_recalculate": "Member's tier recalculated",
 };
 
 const CUSTOMER_FIELD_LABELS: Record<string, string> = {
@@ -86,6 +90,22 @@ function describeChange(
       return subject ?? "";
     case "employee.stores_change":
       return `${subject}: ${storeNames(before.location_ids)} → ${storeNames(after.location_ids)}`;
+    case "tier_rollover.run":
+    case "tier_rollover.test_run": {
+      const month = formatMonthYear(String(after.awarded_month));
+      return after.status === "succeeded"
+        ? `${month}: ${String(after.processed)} members decided${Number(after.skipped) > 0 ? `, ${String(after.skipped)} already had a tier` : ""}`
+        : `${month}: didn't finish — ${String(after.error ?? "unknown problem")}`;
+    }
+    case "tier_awards.recalculate":
+      return `${formatMonthYear(String(after.awarded_month))}: ${String(after.changed)} of ${String(after.members)} members got a new result${row.reason ? ` — ${row.reason}` : ""}`;
+    case "customer.tier_recalculate": {
+      const cap = (v: Json) => String(v).charAt(0).toUpperCase() + String(v).slice(1);
+      const month = formatMonthYear(String(after.awarded_month));
+      return after.unchanged
+        ? `${subject ?? "Customer"}: ${month} checked — no change${row.reason ? ` — ${row.reason}` : ""}`
+        : `${subject ?? "Customer"}: ${month} ${before.tier_key ? `${cap(before.tier_key)} → ` : ""}${cap(after.tier_key)}${row.reason ? ` — ${row.reason}` : ""}`;
+    }
     case "tier_rules.update":
       return `Version ${String(after.version)} saved — starts ${formatCalendarDate(String(after.effective_from_month))}`;
     case "customer.tier_override_set": {

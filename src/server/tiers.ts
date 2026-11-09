@@ -110,13 +110,36 @@ export async function getOverride(customerId: string): Promise<OverrideView | nu
   return row ? toOverrideView(row) : null;
 }
 
-export type CurrentTier = { key: TierKey; label: string; override: OverrideView | null };
+export type CurrentTier = {
+  key: TierKey;
+  label: string;
+  override: OverrideView | null;
+  /** Where the tier comes from: the Owner's override, this month's award, or the starting tier. */
+  source: "override" | "award" | "start";
+};
 
-/** The tier a customer holds right now: an Owner override, else Base (monthly awards start in Step 6). */
+/** The tier a customer holds right now: an Owner override, else this month's award, else Base. */
 export async function getCurrentTier(customerId: string): Promise<CurrentTier> {
-  const [override, labels] = await Promise.all([getOverride(customerId), getTierLabels()]);
-  const key: TierKey = override?.tier ?? "base";
-  return { key, label: labels[key], override };
+  const supabase = await createSupabaseServerClient();
+  const overview = await getRulesOverview();
+  const [override, awardRes] = await Promise.all([
+    getOverride(customerId),
+    supabase
+      .from("monthly_tier_awards")
+      .select("tier_key")
+      .eq("customer_id", customerId)
+      .eq("awarded_month", overview.month)
+      .eq("is_current", true)
+      .maybeSingle(),
+  ]);
+  const awarded = awardRes.data?.tier_key ?? null;
+  const key: TierKey = override?.tier ?? awarded ?? "base";
+  return {
+    key,
+    label: overview.current.names[key],
+    override,
+    source: override ? "override" : awarded ? "award" : "start",
+  };
 }
 
 export type TierView = {

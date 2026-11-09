@@ -23,7 +23,7 @@ export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<H
 }
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("text-sm font-semibold text-foreground", className)} {...props} />;
+  return <label className={cn("text-[15px] font-semibold text-foreground", className)} {...props} />;
 }
 
 /** Label + control + error message, wired together for accessibility. */
@@ -46,9 +46,9 @@ export function Field({
     <div className={cn("flex flex-col gap-1.5", className)}>
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {hint && !error?.length && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && !error?.length && <p className="text-sm text-muted-foreground">{hint}</p>}
       {error?.length ? (
-        <p id={`${htmlFor}-error`} className="text-xs font-medium text-destructive">
+        <p id={`${htmlFor}-error`} className="text-sm font-medium text-destructive">
           {error[0]}
         </p>
       ) : null}
@@ -73,7 +73,7 @@ export function CheckboxField({
       <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-brand-blue" {...props} />
       <span className="flex flex-col">
         <span className="text-sm font-semibold">{label}</span>
-        {description && <span className="text-xs text-muted-foreground">{description}</span>}
+        {description && <span className="text-sm text-muted-foreground">{description}</span>}
       </span>
     </label>
   );

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { TierRules } from "@/lib/tier/engine";
 import { progressToNextTier } from "@/lib/tier/engine";
+import type { AwardView } from "@/server/tier-awards";
 import type { TierView } from "@/server/tiers";
 import { TierCard } from "./tier-card";
 
@@ -35,6 +36,7 @@ function view(options: {
       key: options.override?.tier ?? "base",
       label: NAMES[options.override?.tier ?? "base"],
       override: options.override ?? null,
+      source: options.override ? "override" : "start",
     },
     projection: {
       tier: options.projected ?? "base",
@@ -62,9 +64,38 @@ const MONTHS = [
   { value: "2026-12-01", label: "December 2026" },
 ];
 
-const render = (v: TierView, canManage = false) =>
+const award = (overrides: Partial<AwardView> = {}): AwardView => ({
+  id: "a1",
+  awardedMonth: "2026-11-01",
+  qualifyingMonth: "2026-10-01",
+  tier: "silver",
+  label: "Silver",
+  netSpendCents: 35000,
+  visits: 1,
+  scoreCents: 35000,
+  requirementsMet: true,
+  isCurrent: true,
+  isTest: false,
+  source: "scheduled",
+  reason: null,
+  calculatedAt: "2026-11-01T05:05:00Z",
+  ruleVersion: 1,
+  lookbackMonths: 1,
+  method: "average",
+  months: [{ month: "2026-10-01", spendCents: 35000, visits: 1 }],
+  ...overrides,
+});
+
+const render = (v: TierView, canManage = false, awards: AwardView[] = []) =>
   renderToStaticMarkup(
-    <TierCard view={v} customerId="7a2d3c0f-5e3b-4d9f-8c2b-3a4f5e6d7c8b" customerName="Test One" canManage={canManage} monthOptions={MONTHS} />,
+    <TierCard
+      view={v}
+      awards={awards}
+      customerId="7a2d3c0f-5e3b-4d9f-8c2b-3a4f5e6d7c8b"
+      customerName="Test One"
+      canManage={canManage}
+      monthOptions={MONTHS}
+    />,
   );
 
 describe("TierCard", () => {
@@ -136,6 +167,26 @@ describe("TierCard", () => {
     const rules: TierRules = { ...RULES, lookbackMonths: 2, method: "every_month" };
     const html = render(view({ rules, months: [{ spendCents: 10000, visits: 1 }, { spendCents: 0, visits: 1 }] }));
     expect(html).toContain("too low to reach Silver this month");
+  });
+
+  it("says where the current tier came from when it was decided automatically", () => {
+    const html = render(view({}), false, [award({ awardedMonth: "2026-11-01", qualifyingMonth: "2026-10-01" })]);
+    expect(html).toContain("Decided from October 2026.");
+  });
+
+  it("marks a test run", () => {
+    const html = render(view({}), false, [award({ isTest: true })]);
+    expect(html).toContain("Decided from October 2026 (test run).");
+  });
+
+  it("shows when next month is already decided", () => {
+    const html = render(view({}), false, [award({ awardedMonth: "2026-12-01", qualifyingMonth: "2026-11-01", tier: "gold", label: "Gold" })]);
+    expect(html).toContain("Already decided: Gold, starting Dec 1, 2026.");
+  });
+
+  it("ignores replaced awards when saying what is decided", () => {
+    const html = render(view({}), false, [award({ awardedMonth: "2026-12-01", tier: "gold", label: "Gold", isCurrent: false })]);
+    expect(html).not.toContain("Already decided");
   });
 
   it("shows this month's numbers", () => {

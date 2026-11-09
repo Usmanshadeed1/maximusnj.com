@@ -3,8 +3,9 @@ import { CalendarClock, Crown, Info, SlidersHorizontal, Sparkles } from "lucide-
 import { TierBadge } from "@/components/tier-badge";
 import { TierProgress } from "@/components/tier-progress";
 import { Card } from "@/components/ui/card";
-import { formatCents, formatMonthYear } from "@/lib/format";
+import { formatCalendarDate, formatCents, formatMonthYear } from "@/lib/format";
 import type { Blocker } from "@/lib/tier/engine";
+import type { AwardView } from "@/server/tier-awards";
 import type { TierView } from "@/server/tiers";
 import { ClearTierDialog, SetTierDialog } from "./tier-override-dialogs";
 
@@ -18,12 +19,14 @@ const BLOCKER_TEXT: Record<Blocker, string> = { purchase: "a purchase", visit: "
  */
 export function TierCard({
   view,
+  awards,
   customerId,
   customerName,
   canManage,
   monthOptions,
 }: {
   view: TierView;
+  awards: AwardView[];
   customerId: string;
   customerName: string;
   canManage: boolean;
@@ -36,6 +39,9 @@ export function TierCard({
   const overrideUntil = override?.lastMonth
     ? `until the end of ${formatMonthYear(override.lastMonth)}`
     : "until the Owner removes it";
+
+  const currentAward = awards.find((a) => a.isCurrent && a.awardedMonth === monthStart);
+  const nextAward = awards.find((a) => a.isCurrent && a.awardedMonth === projection.forMonth);
 
   const ratio = progress.targetCents ? progress.scoreCents / progress.targetCents : 0;
   const blockedTier = progress.blockers.length > 0 && progress.scoreTier !== "base" && projection.tier === "base";
@@ -70,7 +76,9 @@ export function TierCard({
             {monthStart ? `For ${formatMonthYear(monthStart)}. ` : ""}
             {override
               ? "Set by hand."
-              : "Everyone starts here. Tiers are awarded automatically at the start of each month."}
+              : currentAward
+                ? `Decided from ${formatMonthYear(currentAward.qualifyingMonth)}${currentAward.isTest ? " (test run)" : ""}.`
+                : "Everyone starts here. Tiers are decided automatically on the 1st of each month."}
           </p>
           {override && (
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-white px-3 py-2.5 text-sm ring-1 ring-brand-yellow/60">
@@ -96,6 +104,11 @@ export function TierCard({
               ? "What the automatic calculation gives today. Your override above stays in effect."
               : "What they'd get if this month ended today."}
           </p>
+          {nextAward && (
+            <p className="mt-2 rounded-lg bg-secondary/60 px-3 py-2 text-sm font-medium">
+              Already decided: {nextAward.label}{nextAward.isTest ? " (test run)" : ""}, starting {formatCalendarDate(projection.forMonth)}.
+            </p>
+          )}
         </div>
       </div>
 
