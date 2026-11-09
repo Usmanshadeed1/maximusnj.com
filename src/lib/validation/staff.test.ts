@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inviteEmployeeSchema, locationSchema, setPasswordSchema } from "./staff";
+import { createEmployeeSchema, deleteLocationSchema, inviteEmployeeSchema, locationSchema, setPasswordSchema } from "./staff";
 
 describe("locationSchema", () => {
   it("upper-cases and accepts a valid store code", () => {
@@ -46,5 +46,23 @@ describe("setPasswordSchema", () => {
     expect(
       setPasswordSchema.safeParse({ password: "long-enough-1", confirmPassword: "long-enough-1" }).success,
     ).toBe(true);
+  });
+});
+
+describe("createEmployeeSchema", () => {
+  const base = { firstName: "Cara", lastName: "Created", email: "Cara@Example.com", role: "staff", locationIds: [] };
+
+  it("requires a password of at least 10 characters", () => {
+    expect(createEmployeeSchema.safeParse({ ...base, password: "short" }).success).toBe(false);
+    const ok = createEmployeeSchema.parse({ ...base, password: "long-enough-1" });
+    expect(ok.email).toBe("cara@example.com");
+  });
+});
+
+describe("deleteLocationSchema", () => {
+  it("needs a store id and the typed name", () => {
+    const id = "6f1c2b9e-4d2a-4c8e-9b1a-2f3e4d5c6b7a";
+    expect(deleteLocationSchema.safeParse({ id, confirmName: "" }).success).toBe(false);
+    expect(deleteLocationSchema.safeParse({ id, confirmName: "Maximus Edison" }).success).toBe(true);
   });
 });

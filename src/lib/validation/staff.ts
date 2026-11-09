@@ -51,4 +51,14 @@ export const inviteEmployeeSchema = z.object({
   locationIds: z.array(z.uuid()).default([]),
 });
 
+/** Owner creates the account directly: same fields as an invite, plus the password they choose. */
+export const createEmployeeSchema = inviteEmployeeSchema.extend({
+  password: z.string().min(10, "Use at least 10 characters.").max(72, "Use at most 72 characters."),
+});
+
+export const deleteLocationSchema = z.object({
+  id: z.uuid(),
+  confirmName: z.string().trim().min(1, "Type the store name to confirm."),
+});
+
 export const employeeIdSchema = z.uuid();

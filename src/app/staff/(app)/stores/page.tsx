@@ -6,6 +6,7 @@ import { EmptyState, PageHeader } from "@/components/ui/page-header";
 import { THead, Table, Td, Th, Tr } from "@/components/ui/table";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireEmployee } from "@/server/auth";
+import { DeleteStoreDialog } from "./delete-store-dialog";
 import { StoreFormDialog } from "./store-form";
 
 export const metadata: Metadata = { title: "Stores" };
@@ -59,7 +60,10 @@ export default async function StoresPage() {
                     </Badge>
                   </Td>
                   <Td className="text-right">
-                    <StoreFormDialog store={store} />
+                    <div className="flex justify-end gap-1">
+                      <StoreFormDialog store={store} />
+                      <DeleteStoreDialog store={store} />
+                    </div>
                   </Td>
                 </Tr>
               ))}

@@ -18,6 +18,8 @@ const ACTION_LABELS: Record<string, string> = {
   "location.update": "Store edited",
   "employee.bootstrap_owner": "Owner account created",
   "employee.invite": "Employee invited",
+  "employee.create": "Employee created",
+  "location.delete": "Store deleted",
   "employee.role_change": "Role changed",
   "employee.deactivate": "Employee deactivated",
   "employee.reactivate": "Employee reactivated",
@@ -67,6 +69,7 @@ function describeChange(
 
   switch (row.action) {
     case "employee.invite":
+    case "employee.create":
     case "employee.bootstrap_owner":
       return `${subject ?? after.email} as ${String(after.role)}`;
     case "employee.role_change":
@@ -76,6 +79,8 @@ function describeChange(
       return subject ?? "";
     case "employee.stores_change":
       return `${subject}: ${storeNames(before.location_ids)} → ${storeNames(after.location_ids)}`;
+    case "location.delete":
+      return `${String(before.name)} (${String(before.code)})`;
     case "location.create":
       return `${String(after.name)} (${String(after.code)})`;
     case "location.update": {

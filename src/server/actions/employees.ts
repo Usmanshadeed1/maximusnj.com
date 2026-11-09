@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { type ActionState, friendlyDbError, validationFailed } from "@/lib/action-result";
 import { serverEnv } from "@/lib/env.server";
-import { canChangeActive, canChangeRole, canInvite } from "@/lib/permissions";
+import { canChangeActive, canChangeRole, canCreateEmployees, canInvite } from "@/lib/permissions";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { employeeIdSchema, inviteEmployeeSchema, roleSchema } from "@/lib/validation/staff";
+import { createEmployeeSchema, employeeIdSchema, inviteEmployeeSchema, roleSchema } from "@/lib/validation/staff";
 import { requireEmployee } from "@/server/auth";
 
 /** ~100 years: Supabase's way of blocking sign-in for a deactivated user. */
@@ -63,6 +63,67 @@ export async function inviteEmployeeAction(_prev: ActionState, formData: FormDat
 
   revalidatePath("/staff/employees");
   return { ok: true, message: `Invite sent to ${input.email}.` };
+}
+
+/**
+ * Owner creates an employee account directly, with a password they choose (or generate).
+ * No email is sent, so it works even while email is limited. The account is marked as
+ * email-confirmed so the employee can sign in straight away.
+ */
+export async function createEmployeeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await requireEmployee(["owner"]);
+  if (!canCreateEmployees(actor.role)) return { error: "You don't have permission to do that." };
+
+  const parsed = createEmployeeSchema.safeParse({
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    email: formData.get("email"),
+    role: formData.get("role"),
+    locationIds: formData.getAll("locationIds"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return validationFailed(parsed.error);
+  const input = parsed.data;
+
+  if (input.role !== "owner" && input.locationIds.length === 0) {
+    return { error: "Choose at least one store.", fieldErrors: { locationIds: ["Choose at least one store."] } };
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+    user_metadata: { first_name: input.firstName, last_name: input.lastName },
+  });
+  if (createError || !created.user) {
+    const exists = createError?.code === "email_exists" || /already|registered/i.test(createError?.message ?? "");
+    if (exists) {
+      return { error: "That email already has an account.", fieldErrors: { email: ["Already has an account."] } };
+    }
+    if (createError?.code === "weak_password") {
+      return { error: "That password is too weak. Try a longer one.", fieldErrors: { password: ["Too weak."] } };
+    }
+    return { error: "Couldn't create the account. Please try again." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("create_employee_record", {
+    p_user_id: created.user.id,
+    p_first_name: input.firstName,
+    p_last_name: input.lastName,
+    p_email: input.email,
+    p_role: input.role,
+    p_location_ids: input.locationIds,
+    p_created_with_password: true,
+  });
+  if (error) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    return { error: friendlyDbError(error) };
+  }
+
+  revalidatePath("/staff/employees");
+  return { ok: true, message: `Account created for ${input.email}.` };
 }
 
 export async function changeRoleAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

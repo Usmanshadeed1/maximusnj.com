@@ -159,6 +159,10 @@ export type Database = {
         };
         Returns: LocationRow;
       };
+      delete_location: {
+        Args: { p_id: string; p_confirm_name: string };
+        Returns: undefined;
+      };
       create_employee_record: {
         Args: {
           p_user_id: string;
@@ -167,6 +171,7 @@ export type Database = {
           p_email: string;
           p_role: EmployeeRole;
           p_location_ids: string[];
+          p_created_with_password?: boolean;
         };
         Returns: EmployeeRow;
       };

@@ -30,7 +30,7 @@ for (const file of files) {
           for (const line of value.split("\n")) {
             if (/^(not )?ok \d+|^1\.\.\d+|^# /.test(line)) {
               console.log(line);
-              if (line.startsWith("not ok") || /^# Looks like you failed/.test(line)) failed++;
+              if (line.startsWith("not ok") || /^# Looks like you (failed|planned)/.test(line)) failed++;
             }
           }
         }

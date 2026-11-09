@@ -8,12 +8,13 @@ import {
   ROLE_LABELS,
   canChangeActive,
   canChangeRole,
+  canCreateEmployees,
   canEditStoresOf,
   invitableRoles,
 } from "@/lib/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireEmployee } from "@/server/auth";
-import { EmployeeActions, InviteEmployeeDialog } from "./employee-forms";
+import { CreateEmployeeDialog, EmployeeActions, InviteEmployeeDialog } from "./employee-forms";
 
 export const metadata: Metadata = { title: "Employees" };
 
@@ -59,7 +60,14 @@ export default async function EmployeesPage() {
             ? "Invite staff, set roles and choose which stores they work at."
             : "Invite Staff and choose which of your stores they work at."
         }
-        actions={<InviteEmployeeDialog roles={invitableRoles(actor.role)} stores={activeStores} />}
+        actions={
+          <>
+            {canCreateEmployees(actor.role) && (
+              <CreateEmployeeDialog roles={invitableRoles(actor.role)} stores={activeStores} />
+            )}
+            <InviteEmployeeDialog roles={invitableRoles(actor.role)} stores={activeStores} />
+          </>
+        }
       />
       <Card>
         {employees.length === 0 ? (

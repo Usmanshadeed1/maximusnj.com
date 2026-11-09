@@ -536,6 +536,8 @@ During the current month, the staff app and the portal show:
 ### 12.1 Employee app ✅
 
 - **Sign-in:** email + password, password reset, and an **invitation flow**. The Owner invites anyone; Managers invite Staff only.
+- **Create employee (Owner only) ✅:** next to Invite, the Owner can create an account directly by typing the name, email, role, stores and a **password** (or generating one). The account works immediately and **no email is sent**. The Owner sees the sign-in details once, with a Copy button. Audit-logged as "Employee created". Managers keep Invite (Staff only).
+- **Delete store (Owner only) ✅:** a Delete button on each store opens a pop-up where the Owner must **type the store's exact name**. A store that still has customers, visits or staff can't be deleted (the database refuses, and any later table that points at a store blocks it too); the Owner **deactivates** it instead. Audit-logged as "Store deleted".
 - **Store selection** after login (only assigned stores).
 - **Screens:**
   - Dashboard
@@ -791,7 +793,7 @@ This lets the owner test monthly features without waiting a month.
 - BE: `calculateTier` in TypeScript.
 - DB: `tier_rule_sets`, `tier_thresholds`, matching Postgres function.
 
-**Build:** all of Section 7.
+**Build:** all of Section 7, plus **Owner manual tier override ✅ (client remark)**: on a customer's profile the Owner can set the tier by hand (Base, Silver, Gold or Diamond) with a **required reason**, audit-logged. How long an override lasts, and whether the monthly update replaces it, is decided with the owner when this step starts.
 
 **Automated tests:**
 - Each threshold exactly at the limit, and one cent below.
@@ -843,7 +845,10 @@ This lets the owner test monthly features without waiting a month.
 - BE: login linking, rate limits, safe errors.
 - DB: `customer_auth_links`, customer RLS.
 
-**Build:** all of Section 5.2, 9.2 and 11.
+**Build:** all of Section 5.2, 9.2 and 11, plus the **customer PIN ✅ (client remark)**:
+- The customer sets their own PIN in the portal: **numbers only, at least 6 digits**, entered on an **on-screen number pad** (large touch buttons).
+- Where it is used (planned: on the check-in kiosk, after the card scan, so nobody can use someone else's card) and how a forgotten PIN is reset are confirmed with the owner before building.
+- Security: store only a **hash** of the PIN, limit wrong attempts and lock temporarily, and never show or log the PIN. The member number is still not a secret.
 
 **Automated tests:**
 - A customer sees only their own data.
@@ -1077,3 +1082,7 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 26 | Data retention | Kept indefinitely; Owner export and delete on request |
 | 27 | Paid membership | Retired |
 | 28 | Prototype data | Migrate customers, numbers, visits and transactions |
+| 29 | Create employee | Owner can create an employee directly with a password (no email), besides inviting. Built after the first client demo |
+| 30 | Delete store | Owner can delete a store by typing its name; only stores with no customers, visits or staff. Others are deactivated. Built after the first client demo |
+| 31 | Owner sets customer tier | Manual override by the Owner, with a reason. Built in Step 5 |
+| 32 | Customer PIN | Customer sets a numbers-only PIN (6+ digits) on an on-screen number pad. Built with the portal in Step 7 |

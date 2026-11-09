@@ -44,6 +44,16 @@ export function canManageLocations(actor: EmployeeRole): boolean {
   return actor === "owner";
 }
 
+/** Only the Owner creates an employee account directly with a password (Managers invite Staff by email). */
+export function canCreateEmployees(actor: EmployeeRole): boolean {
+  return actor === "owner";
+}
+
+/** Only the Owner deletes stores, and only empty ones (the database enforces the "empty" rule). */
+export function canDeleteLocations(actor: EmployeeRole): boolean {
+  return actor === "owner";
+}
+
 export function canViewEmployees(actor: EmployeeRole): boolean {
   return actor === "owner" || actor === "manager";
 }

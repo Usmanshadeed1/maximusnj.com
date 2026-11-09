@@ -3,6 +3,8 @@ import {
   canChangeActive,
   canChangeCustomerStatus,
   canChangeRole,
+  canCreateEmployees,
+  canDeleteLocations,
   canMergeCustomers,
   canEditStoresOf,
   canInvite,
@@ -49,6 +51,17 @@ describe("store assignments", () => {
     expect(canEditStoresOf("manager", "staff")).toBe(true);
     expect(canEditStoresOf("manager", "manager")).toBe(false);
     expect(canEditStoresOf("staff", "staff")).toBe(false);
+  });
+});
+
+describe("owner-only actions", () => {
+  it("only the Owner creates employees directly and deletes stores", () => {
+    expect(canCreateEmployees("owner")).toBe(true);
+    expect(canCreateEmployees("manager")).toBe(false);
+    expect(canCreateEmployees("staff")).toBe(false);
+    expect(canDeleteLocations("owner")).toBe(true);
+    expect(canDeleteLocations("manager")).toBe(false);
+    expect(canDeleteLocations("staff")).toBe(false);
   });
 });
 

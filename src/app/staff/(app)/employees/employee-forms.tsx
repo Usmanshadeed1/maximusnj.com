@@ -1,13 +1,20 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { MapPin, Power, Shield, UserPlus } from "lucide-react";
+import { startTransition, useActionState, useEffect, useState } from "react";
+import { Check, Copy, Eye, EyeOff, KeyRound, MapPin, Power, RefreshCw, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, useDialog } from "@/components/ui/dialog";
 import { Field, FormMessage, Input, Select, SubmitButton } from "@/components/ui/form";
 import { type ActionState, idleState } from "@/lib/action-result";
+import { generatePassword } from "@/lib/password";
 import { ALL_ROLES, ROLE_LABELS, requiresStore } from "@/lib/permissions";
-import { changeRoleAction, inviteEmployeeAction, setActiveAction, setStoresAction } from "@/server/actions/employees";
+import {
+  changeRoleAction,
+  createEmployeeAction,
+  inviteEmployeeAction,
+  setActiveAction,
+  setStoresAction,
+} from "@/server/actions/employees";
 import type { EmployeeRole } from "@/types/database";
 
 type StoreOption = { id: string; name: string; code: string };
@@ -122,6 +129,166 @@ function InviteForm({ roles, stores }: { roles: EmployeeRole[]; stores: StoreOpt
           Cancel
         </Button>
         <SubmitButton pendingText="Sending invite…">Send invite</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+// ---------------------------------------------------------------------------------------
+// Create (Owner only): the account works immediately, no email needed
+// ---------------------------------------------------------------------------------------
+
+export function CreateEmployeeDialog({ roles, stores }: { roles: EmployeeRole[]; stores: StoreOption[] }) {
+  return (
+    <Dialog
+      title="Create an employee"
+      description="Make the account yourself. You choose the password and pass it on — no email needed."
+      trigger={(open) => (
+        <Button variant="outline" onClick={open}>
+          <KeyRound aria-hidden /> Create employee
+        </Button>
+      )}
+    >
+      <CreateForm roles={roles} stores={stores} />
+    </Dialog>
+  );
+}
+
+function CreateForm({ roles, stores }: { roles: EmployeeRole[]; stores: StoreOption[] }) {
+  const [state, formAction, isPending] = useActionState(createEmployeeAction, idleState);
+  const { close } = useDialog();
+  const [role, setRole] = useState<EmployeeRole>(roles.includes("staff") ? "staff" : roles[0]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  if (state.ok) {
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(`Email: ${email.trim().toLowerCase()}\nPassword: ${password}`);
+        setCopied(true);
+      } catch {
+        // Clipboard can be blocked; the details are on screen to copy by hand.
+      }
+    };
+    return (
+      <div className="flex flex-col gap-4">
+        <FormMessage state={state} />
+        <div className="rounded-lg border bg-secondary/50 p-4 text-sm">
+          <p className="font-semibold">Give them these sign-in details</p>
+          <dl className="mt-3 grid grid-cols-[5rem_1fr] gap-y-2">
+            <dt className="text-muted-foreground">Email</dt>
+            <dd className="font-medium break-all">{email.trim().toLowerCase()}</dd>
+            <dt className="text-muted-foreground">Password</dt>
+            <dd className="font-mono font-semibold break-all">{password}</dd>
+          </dl>
+          <p className="mt-3 text-xs text-muted-foreground">
+            This is the only time the password is shown. They can change it later with “Forgot your password?”.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={copy}>
+            {copied ? <Check aria-hidden /> : <Copy aria-hidden />} {copied ? "Copied" : "Copy details"}
+          </Button>
+          <Button onClick={close}>Done</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      noValidate
+      className="flex flex-col gap-4"
+      onSubmit={(e) => {
+        // Submit manually so React doesn't clear the form when there's an error to fix.
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        startTransition(() => formAction(formData));
+      }}
+    >
+      <FormMessage state={state} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="First name" htmlFor="c-firstName" error={state.fieldErrors?.firstName}>
+          <Input id="c-firstName" name="firstName" autoComplete="off" required autoFocus />
+        </Field>
+        <Field label="Last name" htmlFor="c-lastName" error={state.fieldErrors?.lastName}>
+          <Input id="c-lastName" name="lastName" autoComplete="off" required />
+        </Field>
+      </div>
+      <Field label="Email" htmlFor="c-email" error={state.fieldErrors?.email}>
+        <Input
+          id="c-email"
+          name="email"
+          type="email"
+          autoComplete="off"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </Field>
+      <Field
+        label="Password"
+        htmlFor="c-password"
+        error={state.fieldErrors?.password}
+        hint="At least 10 characters. Generate one, or type your own."
+      >
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Input
+              id="c-password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pr-11 font-mono"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute top-1/2 right-1.5 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted"
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setPassword(generatePassword());
+              setShowPassword(true);
+            }}
+          >
+            <RefreshCw aria-hidden /> Generate
+          </Button>
+        </div>
+      </Field>
+      <Field label="Role" htmlFor="c-role" error={state.fieldErrors?.role}>
+        <Select id="c-role" name="role" value={role} onChange={(e) => setRole(e.target.value as EmployeeRole)}>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {ROLE_LABELS[r]}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      {requiresStore(role) ? (
+        <StoreCheckboxes stores={stores} error={state.fieldErrors?.locationIds} />
+      ) : (
+        <p className="rounded-md bg-secondary px-3 py-2.5 text-sm text-secondary-foreground">
+          Owners have access to every store.
+        </p>
+      )}
+      <div className="mt-2 flex justify-end gap-2">
+        <Button variant="outline" onClick={close}>
+          Cancel
+        </Button>
+        <SubmitButton pending={isPending} pendingText="Creating…">
+          Create account
+        </SubmitButton>
       </div>
     </form>
   );

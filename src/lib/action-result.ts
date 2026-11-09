@@ -32,6 +32,9 @@ const DB_MESSAGES: Record<string, string> = {
   member_number_immutable: "Member numbers can never be changed.",
   merge_same_customer: "Choose a different member to keep.",
   reason_required: "Please give a reason.",
+  name_mismatch: "The name you typed doesn't match the store name.",
+  store_has_history:
+    "This store has customers, visits or staff, so it can't be deleted without losing their history. Deactivate it instead.",
 };
 
 /** Turns a Supabase/Postgres error into a message that's safe and clear for staff. */

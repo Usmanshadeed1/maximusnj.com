@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { type ActionState, friendlyDbError, validationFailed } from "@/lib/action-result";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { locationSchema, updateLocationSchema } from "@/lib/validation/staff";
+import { deleteLocationSchema, locationSchema, updateLocationSchema } from "@/lib/validation/staff";
 import { requireEmployee } from "@/server/auth";
 
 export async function createStoreAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -58,4 +58,27 @@ export async function updateStoreAction(_prev: ActionState, formData: FormData):
 
   revalidatePath("/staff", "layout");
   return { ok: true, message: "Store saved." };
+}
+
+/**
+ * Owner only. The Owner must type the store's exact name; the database re-checks it and
+ * refuses to delete a store that still has customers, visits or staff.
+ */
+export async function deleteStoreAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireEmployee(["owner"]);
+  const parsed = deleteLocationSchema.safeParse({
+    id: formData.get("id"),
+    confirmName: formData.get("confirmName"),
+  });
+  if (!parsed.success) return validationFailed(parsed.error);
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("delete_location", {
+    p_id: parsed.data.id,
+    p_confirm_name: parsed.data.confirmName,
+  });
+  if (error) return { error: friendlyDbError(error) };
+
+  revalidatePath("/staff", "layout");
+  return { ok: true, message: "Store deleted." };
 }
