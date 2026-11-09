@@ -81,9 +81,9 @@ export function TransactionsCard({
             const linked = t.refundOfId ? byId.get(t.refundOfId) : undefined;
 
             return (
-              <li key={t.id} className={cn("py-4", t.voided && "opacity-60")}>
+              <li key={t.id} className="py-4">
                 <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-                  <div className="min-w-0 flex-1">
+                  <div className={cn("min-w-0 flex-1", t.voided && "text-muted-foreground")}>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant={BADGE_VARIANT[t.type]}>{info.label}</Badge>
                       {t.type === "adjustment" && (
@@ -105,7 +105,7 @@ export function TransactionsCard({
                     )}
                     {t.note && <p className="mt-1.5 text-sm">“{t.note}”</p>}
                     {t.voided && t.voided.reason && (
-                      <p className="mt-1.5 text-sm text-destructive">Voided — {t.voided.reason}</p>
+                      <p className="mt-1.5 text-sm font-medium text-destructive">Voided — {t.voided.reason}</p>
                     )}
                   </div>
 
@@ -113,7 +113,7 @@ export function TransactionsCard({
                     <p
                       className={cn(
                         "text-xl font-bold tabular-nums",
-                        t.voided && "line-through",
+                        t.voided && "text-muted-foreground line-through",
                         !t.voided && effect > 0 && "text-success",
                         !t.voided && effect < 0 && "text-destructive",
                       )}

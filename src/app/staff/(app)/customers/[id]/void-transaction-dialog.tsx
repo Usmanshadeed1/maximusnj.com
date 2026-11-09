@@ -24,7 +24,7 @@ export function VoidTransactionDialog({
       title="Void this transaction?"
       description={summary}
       trigger={(open) => (
-        <Button variant="ghost" size="sm" onClick={open} className="text-destructive hover:bg-destructive/10">
+        <Button variant="dangerOutline" size="sm" onClick={open}>
           <Ban aria-hidden /> Void
         </Button>
       )}

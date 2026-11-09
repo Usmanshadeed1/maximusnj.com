@@ -347,7 +347,7 @@ export function EmployeeActions({
         <Dialog
           title={employee.isActive ? `Deactivate ${employee.name}?` : `Reactivate ${employee.name}?`}
           trigger={(open) => (
-            <Button variant="ghost" size="sm" onClick={open} className={employee.isActive ? "text-destructive" : undefined}>
+            <Button variant={employee.isActive ? "dangerOutline" : "ghost"} size="sm" onClick={open}>
               <Power aria-hidden /> {employee.isActive ? "Deactivate" : "Reactivate"}
             </Button>
           )}

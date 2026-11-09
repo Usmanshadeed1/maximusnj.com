@@ -16,7 +16,7 @@ export function StatusDialog({ customerId, name, status }: { customerId: string;
     <Dialog
       title={deactivate ? `Deactivate ${name}?` : `Reactivate ${name}?`}
       trigger={(open) => (
-        <Button variant="outline" onClick={open} className={deactivate ? "text-destructive" : undefined}>
+        <Button variant={deactivate ? "dangerOutline" : "outline"} onClick={open}>
           <Power aria-hidden /> {deactivate ? "Deactivate member" : "Reactivate member"}
         </Button>
       )}

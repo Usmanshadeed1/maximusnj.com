@@ -15,7 +15,7 @@ export function DeleteStoreDialog({ store }: { store: LocationRow }) {
     <Dialog
       title={`Delete ${store.name}?`}
       trigger={(open) => (
-        <Button variant="ghost" size="sm" onClick={open} className="text-destructive hover:bg-destructive/10">
+        <Button variant="dangerOutline" size="sm" onClick={open}>
           <Trash2 aria-hidden /> Delete
         </Button>
       )}
