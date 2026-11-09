@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, KeyRound, Keyboard, Loader2, Lock, LogIn, ScanLine, ShieldCheck, Store, X, XCircle } from "lucide-react";
+import { CheckCircle2, KeyRound, Keyboard, LayoutDashboard, UserRound, Loader2, Lock, LogIn, ScanLine, ShieldCheck, Store, X, XCircle } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { BUSINESS_TIME_ZONE } from "@/lib/format";
 import { type KioskOutcome, cleanMemberNumber, kioskScreen, unknownPinMessage, wrongPinMessage } from "@/lib/kiosk";
 import { cn } from "@/lib/utils";
 import { checkInAction, checkInByPinAction } from "@/server/actions/kiosk";
+import { kioskStaffCheckInAction, kioskStaffSignInAction } from "@/server/actions/staff-pin";
 import { KioskPin } from "./kiosk-pin";
 import { StaffCredentialsForm } from "./staff-credentials-form";
 
@@ -24,6 +25,8 @@ type Phase =
   | { type: "pin"; memberNumber: string; error: string | null; attempt: number }
   /** No card: the member types their PIN on its own. */
   | { type: "pinOnly"; error: string | null; attempt: number }
+  /** An employee: check in, or go to the staff dashboard. */
+  | { type: "staffChoice"; firstName: string; token: string }
   | { type: "result"; outcome: KioskOutcome };
 
 /** Stable id for this tablet (attached to every visit). Falls back gracefully if storage is blocked. */
@@ -114,6 +117,10 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
       setPhase({ type: "pin", memberNumber, error: wrongPinMessage(outcome.attemptsLeft), attempt: attempt + 1 });
       return;
     }
+    if (outcome.kind === "staff_choice") {
+      setPhase({ type: "staffChoice", firstName: outcome.firstName, token: outcome.token });
+      return;
+    }
     setPhase({ type: "result", outcome });
     if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
   };
@@ -130,6 +137,23 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
     if (outcome.kind === "pin_not_found") {
       setPhase({ type: "pinOnly", error: unknownPinMessage(outcome.attemptsLeft), attempt: attempt + 1 });
       return;
+    }
+    if (outcome.kind === "staff_choice") {
+      setPhase({ type: "staffChoice", firstName: outcome.firstName, token: outcome.token });
+      return;
+    }
+    setPhase({ type: "result", outcome });
+    if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+  };
+
+  /** The employee chose "Check in". */
+  const staffCheckIn = async (token: string) => {
+    setPhase({ type: "checking" });
+    let outcome: KioskOutcome;
+    try {
+      outcome = await kioskStaffCheckInAction(token, deviceId.current);
+    } catch {
+      outcome = { kind: "error" };
     }
     setPhase({ type: "result", outcome });
     if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
@@ -272,6 +296,16 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
         />
       )}
 
+      {/* Employee: check in, or go to the dashboard */}
+      {phase.type === "staffChoice" && (
+        <StaffChoice
+          firstName={phase.firstName}
+          token={phase.token}
+          onCheckIn={() => void staffCheckIn(phase.token)}
+          onCancel={backToReady}
+        />
+      )}
+
       {/* Result */}
       {phase.type === "result" && <ResultScreen outcome={phase.outcome} onDismiss={backToReady} />}
 
@@ -364,6 +398,36 @@ function ResultScreen({ outcome, onDismiss }: { outcome: KioskOutcome; onDismiss
         </div>
       )}
     </div>
+  );
+}
+
+/** For an employee who scanned their card and typed their PIN (or typed their PIN). Goes away after 30 seconds. */
+function StaffChoice({ firstName, token, onCheckIn, onCancel }: { firstName: string; token: string; onCheckIn: () => void; onCancel: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onCancel, 30_000);
+    return () => clearTimeout(timer);
+  }, [onCancel]);
+  return (
+    <Overlay>
+      <UserRound aria-hidden className="mx-auto size-12 text-brand-yellow" />
+      <h2 className="mt-4 text-4xl font-extrabold tracking-tight">Hi, {firstName}</h2>
+      <p className="mt-2 text-lg text-white/70">What would you like to do?</p>
+      <div className="mt-8 flex flex-col gap-3">
+        <Button size="kiosk" variant="accent" className="h-16 w-full text-xl" onClick={onCheckIn}>
+          <CheckCircle2 aria-hidden className="size-6" /> Check in
+        </Button>
+        <form action={kioskStaffSignInAction}>
+          <input type="hidden" name="token" value={token} />
+          <Button type="submit" size="kiosk" className="h-16 w-full border-2 border-white/40 bg-white text-xl text-brand-navy-deep hover:bg-white/90">
+            <LayoutDashboard aria-hidden className="size-6" /> Go to staff dashboard
+          </Button>
+        </form>
+        <Button variant="ghost" size="lg" className="text-white/80 hover:bg-white/10 hover:text-white" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+      <p className="mt-6 text-sm text-white/50">Going to the dashboard ends kiosk mode on this tablet.</p>
+    </Overlay>
   );
 }
 

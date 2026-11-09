@@ -7,12 +7,20 @@ import { FormMessage } from "@/components/ui/form";
 import { PinEntry, RevealToggle } from "@/components/ui/pin-entry";
 import type { ActionState } from "@/lib/action-result";
 import { PIN_MAX, PIN_MIN } from "@/lib/validation/portal";
-import { setPinAction } from "@/server/actions/portal";
 
 type Step = "idle" | "enter" | "confirm";
 
 /** Set or change the member's PIN on an on-screen number pad. The PIN is sent once and never shown again. */
-export function PinSetup({ hasPin }: { hasPin: boolean }) {
+export function PinSetup({
+  hasPin,
+  save: saveAction,
+  intro,
+}: {
+  hasPin: boolean;
+  /** Server action that saves the PIN (the member page and the staff page each pass their own). */
+  save: (pin: string, confirmPin: string) => Promise<ActionState>;
+  intro?: string;
+}) {
   const [step, setStep] = useState<Step>("idle");
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -36,7 +44,7 @@ export function PinSetup({ hasPin }: { hasPin: boolean }) {
       return;
     }
     startTransition(async () => {
-      const outcome = await setPinAction(pin, confirm);
+      const outcome = await saveAction(pin, confirm);
       setResult(outcome);
       if (outcome.ok) reset();
       else {
@@ -56,8 +64,8 @@ export function PinSetup({ hasPin }: { hasPin: boolean }) {
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold text-brand-navy-deep">Your PIN</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Use your PIN to check in at the store entrance without your card. If you scan your card, the kiosk asks for
-            your PIN too, so nobody else can check in as you. Every member's PIN is different.
+            {intro ?? <>Use your PIN to check in at the store entrance without your card. If you scan your card, the kiosk asks for
+            your PIN too, so nobody else can check in as you. Every member&apos;s PIN is different.</>}
           </p>
           <p
             className={

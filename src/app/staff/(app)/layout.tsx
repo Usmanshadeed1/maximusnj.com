@@ -22,6 +22,7 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
   if (canViewEmployees(employee.role)) nav.push("employees");
   if (canManageTiers(employee.role)) nav.push("tiers", "monthly");
   if (canViewAuditLog(employee.role)) nav.push("audit");
+  nav.push("mypin");
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col lg:h-dvh lg:flex-none lg:flex-row lg:overflow-hidden">

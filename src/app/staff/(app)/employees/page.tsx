@@ -14,6 +14,7 @@ import {
 } from "@/lib/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireEmployee } from "@/server/auth";
+import { EmployeeCardDialog } from "./card-dialog";
 import { CreateEmployeeDialog, EmployeeActions, InviteEmployeeDialog } from "./employee-forms";
 
 export const metadata: Metadata = { title: "Employees" };
@@ -25,7 +26,7 @@ export default async function EmployeesPage() {
   const supabase = await createSupabaseServerClient();
 
   const [employeesRes, assignmentsRes, storesRes] = await Promise.all([
-    supabase.from("employees").select("id, first_name, last_name, email, role, is_active").order("first_name"),
+    supabase.from("employees").select("id, first_name, last_name, email, role, is_active, customer_id").order("first_name"),
     supabase.from("employee_locations").select("employee_id, location_id"),
     // RLS limits this to the stores the actor may see (Owner: all, Manager: their own).
     supabase.from("locations").select("id, name, code, is_active").order("name"),
@@ -45,6 +46,10 @@ export default async function EmployeesPage() {
   }
 
   const stores = storesRes.data;
+  // Member numbers of the cards linked to employees.
+  const cardIds = employeesRes.data.flatMap((e) => (e.customer_id ? [e.customer_id] : []));
+  const { data: cards } = cardIds.length ? await supabase.from("customers").select("id, member_number").in("id", cardIds) : { data: [] };
+  const cardNumber = new Map((cards ?? []).map((c) => [c.id, c.member_number]));
   const storeById = new Map(stores.map((s) => [s.id, s]));
   const activeStores = stores.filter((s) => s.is_active).map((s) => ({ id: s.id, name: s.name, code: s.code }));
   const employees = [...employeesRes.data].sort(
@@ -80,6 +85,7 @@ export default async function EmployeesPage() {
                 <Th>Role</Th>
                 <Th className="hidden md:table-cell">Stores</Th>
                 <Th>Status</Th>
+                {actor.role === "owner" && <Th className="hidden sm:table-cell">Member card</Th>}
                 <Th className="text-right">
                   <span className="sr-only">Actions</span>
                 </Th>
@@ -120,6 +126,16 @@ export default async function EmployeesPage() {
                         {employee.is_active ? "Active" : "Deactivated"}
                       </Badge>
                     </Td>
+                    {actor.role === "owner" && (
+                      <Td className="hidden sm:table-cell">
+                        <EmployeeCardDialog
+                          employeeId={employee.id}
+                          name={`${employee.first_name} ${employee.last_name}`}
+                          memberNumber={employee.customer_id ? (cardNumber.get(employee.customer_id) ?? null) : null}
+                          stores={activeStores}
+                        />
+                      </Td>
+                    )}
                     <Td className="text-right">
                       <EmployeeActions
                         employee={{

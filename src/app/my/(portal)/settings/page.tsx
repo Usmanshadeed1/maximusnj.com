@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { formatPhone } from "@/lib/phone";
 import { getMemberAccess } from "@/server/portal";
 import { NotifyForm } from "./notify-form";
+import { setPinAction } from "@/server/actions/portal";
 import { PinSetup } from "./pin-setup";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -19,7 +20,7 @@ export default async function MemberSettingsPage() {
       <h1 className="text-2xl font-bold tracking-tight text-brand-navy-deep">Settings</h1>
 
       <Card className="p-5 sm:p-6">
-        <PinSetup hasPin={data.hasPin} />
+        <PinSetup hasPin={data.hasPin} save={setPinAction} />
       </Card>
 
       <Card className="p-5 sm:p-6">

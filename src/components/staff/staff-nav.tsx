@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { History, IdCard, LayoutDashboard, Package, Menu, BarChart3, Receipt, RefreshCw, ScanLine, SlidersHorizontal, Store, Ticket, Users, X } from "lucide-react";
+import { History, IdCard, KeyRound, LayoutDashboard, Package, Menu, BarChart3, Receipt, RefreshCw, ScanLine, SlidersHorizontal, Store, Ticket, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type NavKey = "dashboard" | "customers" | "transactions" | "raffles" | "products" | "reports" | "kiosk" | "stores" | "employees" | "tiers" | "monthly" | "audit";
+export type NavKey = "dashboard" | "customers" | "transactions" | "raffles" | "products" | "reports" | "kiosk" | "stores" | "employees" | "tiers" | "monthly" | "audit" | "mypin";
 
 const ITEMS: Record<NavKey, { href: string; label: string; icon: typeof Store }> = {
   dashboard: { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
@@ -21,6 +21,7 @@ const ITEMS: Record<NavKey, { href: string; label: string; icon: typeof Store }>
   tiers: { href: "/staff/settings/tiers", label: "Tier settings", icon: SlidersHorizontal },
   monthly: { href: "/staff/settings/monthly-update", label: "Monthly update", icon: RefreshCw },
   audit: { href: "/staff/audit", label: "Audit log", icon: History },
+  mypin: { href: "/staff/my-pin", label: "My PIN", icon: KeyRound },
 };
 
 /** Sidebar on desktop; slide-down menu on tablet/phone. Items are pre-filtered by role on the server. */

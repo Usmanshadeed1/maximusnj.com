@@ -641,6 +641,14 @@ During the current month, the staff app and the portal show:
 - To tell PINs apart without storing them, each PIN also has a keyed fingerprint (HMAC-SHA256 with a secret held in a private database schema), next to the bcrypt hash. PINs set before this change need to be set again to work without a card.
 - Guessing is limited per kiosk tablet: **5 wrong PINs in a row lock PIN entry on that tablet for 5 minutes** (settings `pin_device_max_attempts`, `pin_device_lock_minutes`), audit-logged. The member's own 5-try lock still applies.
 
+### 11.3 Staff use their card and PIN at the kiosk ✅ (client request)
+
+- Every employee (Owner, Manager, Staff) can have a **member card**: on the Employees page the Owner presses **Card** to create a new one or link an existing member number. One card per employee.
+- Employees set their PIN on **My PIN** in the staff menu (the same unique-PIN rules as members).
+- At the kiosk, an employee's **card + PIN**, or **PIN alone**, shows **"Hi, name"** with two choices: **Check in** (a normal visit) or **Go to staff dashboard** (signed in without a password, as that employee; kiosk mode ends on that tablet). A card alone never opens the dashboard.
+- The choice uses a one-time pass made by the database: it works once, within 2 minutes, at the same store, on the same kiosk. The sign-in is made by the server and is audit-logged ("employee.kiosk_sign_in").
+- Customers: card + PIN (or PIN alone) checks them in. The member page `/my` still signs in by email only.
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -1273,3 +1281,4 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 56 | Erasing a member | The Owner can download a member's data or erase their personal details (reason + typed member number); sales and visits stay under the member number |
 | 57 | Raffle products | Owner/Managers keep a product list; a raffle offers several; members rank the ones they want; staff assign a product to each person by hand after the draw (no automatic assignment, no prices) |
 | 58 | PIN-only check-in | Card or PIN at the kiosk; every PIN unique ("taken" message accepted); 5 wrong PINs per tablet lock PIN entry for 5 minutes |
+| 59 | Staff at the kiosk | Employees get a member card (Owner links or creates it) and set a PIN on My PIN; card + PIN or PIN alone lets them check in or open the staff dashboard |

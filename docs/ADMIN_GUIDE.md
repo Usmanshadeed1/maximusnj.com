@@ -27,6 +27,8 @@ Staff app: **members.maximusnj.com/staff** · Member page: **members.maximusnj.c
 
 **Check-in kiosk:** open *Check-in kiosk* on the entrance tablet and press *Start kiosk mode*. Members scan their card, or press **Check in with my PIN** and type their PIN on the number pad (no card needed). Members who scan a card and have a PIN are asked for it too. Five wrong PINs in a row lock PIN entry on that tablet for 5 minutes. The kiosk locks after 10 minutes without use; any staff member unlocks it with their own email and password.
 
+**Your own card and PIN:** the Owner gives each employee a member card (Employees → **Card**). Then set your PIN under **My PIN**. At the kiosk, scan your card and type your PIN (or just type your PIN) and choose **Check in** or **Go to staff dashboard**.
+
 **Record a sale:** *Record transaction* → find the member → choose Purchase, Refund, Trade / buy-in… → amount → Record. Mistakes are never edited: ask the Owner to *Void*, or record a refund.
 
 **A member forgot their PIN:** open their profile → *Online account and PIN* → *Reset PIN* (Owner or Manager). They set a new one in the member page.

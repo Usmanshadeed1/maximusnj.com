@@ -113,6 +113,11 @@ const DB_MESSAGES: Record<string, string> = {
   choices_required: "Pick at least one product.",
   choices_duplicate: "Each product can only be picked once.",
   choice_invalid: "Pick only products this raffle offers.",
+  no_member_card: "You don't have a member card yet. Ask the Owner to give you one on the Employees page.",
+  member_not_found: "No member has that number.",
+  card_in_use: "That card already belongs to another employee.",
+  card_exists: "This employee already has a card.",
+  token_invalid: "That took too long. Please scan or type your PIN again.",
   range_invalid: "Choose a start date that is on or before the end date (at most one year apart).",
   store_has_history:
     "This store has customers, visits or staff, so it can't be deleted without losing their history. Deactivate it instead.",

@@ -60,9 +60,13 @@ export function PinEntry({
   };
 
   const keyClass = cn(
-    "grid place-items-center rounded-2xl border bg-white font-semibold text-brand-navy-deep shadow-xs transition select-none",
-    "active:scale-95 active:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-    "disabled:pointer-events-none disabled:opacity-50",
+    // Clear key-caps: a solid border, a small "pressable" shadow, and a strong focus ring for keyboards.
+    "grid place-items-center rounded-2xl border-2 border-slate-300 bg-white font-bold text-brand-navy-deep select-none",
+    "shadow-[0_3px_0_0_rgb(203_213_225)] transition-[transform,box-shadow,background-color,border-color] duration-100",
+    "hover:border-brand-blue hover:bg-secondary/50",
+    "active:translate-y-[3px] active:bg-secondary active:shadow-none",
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-yellow focus-visible:border-brand-navy-deep",
+    "disabled:pointer-events-none disabled:opacity-40",
     kiosk ? "h-20 text-4xl sm:h-24" : "h-16 text-2xl sm:h-[4.5rem]",
   );
 
@@ -90,7 +94,7 @@ export function PinEntry({
               className={cn(
                 "rounded-full border-2 transition-colors",
                 kiosk ? "size-5" : "size-4",
-                invalid ? "border-destructive" : "border-brand-navy/40",
+                invalid ? "border-destructive" : "border-slate-400",
                 filled && (invalid ? "border-destructive bg-destructive" : "border-brand-blue bg-brand-blue"),
               )}
             />
@@ -106,7 +110,7 @@ export function PinEntry({
         ))}
         <button
           type="button"
-          className={cn(keyClass, "border-transparent bg-transparent text-sm font-semibold text-muted-foreground shadow-none")}
+          className={cn(keyClass, "border-slate-200 bg-slate-100 text-base font-semibold text-slate-700 shadow-[0_3px_0_0_rgb(226_232_240)]")}
           onClick={() => onChange("")}
           disabled={disabled || value.length === 0}
         >
@@ -118,7 +122,7 @@ export function PinEntry({
         <button
           type="button"
           aria-label="Delete last number"
-          className={cn(keyClass, "border-transparent bg-transparent shadow-none")}
+          className={cn(keyClass, "border-slate-200 bg-slate-100 text-slate-700 shadow-[0_3px_0_0_rgb(226_232_240)]")}
           onClick={back}
           disabled={disabled || value.length === 0}
         >

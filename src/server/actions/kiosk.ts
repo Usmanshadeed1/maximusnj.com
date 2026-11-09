@@ -76,6 +76,8 @@ async function toOutcome(data: CheckInResult): Promise<KioskOutcome> {
       return { kind: "pin_not_found", attemptsLeft: data.attempts_left };
     case "kiosk_locked":
       return { kind: "kiosk_locked", minutesLeft: data.minutes_left };
+    case "staff_choice":
+      return { kind: "staff_choice", firstName: data.first_name, role: data.role, token: data.token };
   }
 }
 

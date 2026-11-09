@@ -17,6 +17,8 @@ export type KioskOutcome =
   | { kind: "pin_not_found"; attemptsLeft: number }
   /** Too many wrong PINs on this tablet: PIN entry waits a few minutes. */
   | { kind: "kiosk_locked"; minutesLeft: number }
+  /** An employee proved it is them: they choose "Check in" or "Go to staff dashboard". */
+  | { kind: "staff_choice"; firstName: string; role: string; token: string }
   | { kind: "error" }
   | { kind: "session_expired" };
 
@@ -64,6 +66,8 @@ export function kioskScreen(outcome: KioskOutcome): KioskScreen {
         title: "Too many wrong PINs",
         message: `Please scan your card, or try your PIN again in ${outcome.minutesLeft} ${outcome.minutesLeft === 1 ? "minute" : "minutes"}.`,
       };
+    case "staff_choice":
+      return { tone: "success", title: `Hi, ${outcome.firstName}`, message: "Choose what you want to do." };
     case "pin_not_found":
     case "pin_required":
     case "pin_incorrect":

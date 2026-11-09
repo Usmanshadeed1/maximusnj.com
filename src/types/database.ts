@@ -31,6 +31,8 @@ export type EmployeeRow = {
   role: EmployeeRole;
   is_active: boolean;
   invited_by: string | null;
+  /** The member card linked to this employee (for the kiosk). */
+  customer_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -277,7 +279,8 @@ export type CheckInResult =
   | { result: "pin_incorrect"; attempts_left: number }
   | { result: "pin_locked"; minutes_left: number }
   | { result: "pin_not_found"; attempts_left: number }
-  | { result: "kiosk_locked"; minutes_left: number };
+  | { result: "kiosk_locked"; minutes_left: number }
+  | { result: "staff_choice"; first_name: string; role: EmployeeRole; token: string };
 
 // ---- Customer portal (Step 7) -------------------------------------------------------------------
 export type LinkState = "linked" | "unverified" | "needs_signup" | "contact_store";
@@ -727,6 +730,13 @@ export type Database = {
         Args: { p_pin: string; p_location_id: string; p_device_id?: string | null };
         Returns: CheckInResult;
       };
+      kiosk_staff_check_in: { Args: { p_token: string; p_location_id: string; p_device_id?: string | null }; Returns: CheckInResult };
+      kiosk_staff_sign_in: { Args: { p_token: string; p_location_id: string }; Returns: string };
+      staff_set_my_pin: { Args: { p_pin: string }; Returns: boolean };
+      staff_my_card: { Args: Record<string, never>; Returns: { member_number: string; has_pin: boolean } | null };
+      link_employee_card: { Args: { p_employee_id: string; p_member_number: string }; Returns: string };
+      create_employee_card: { Args: { p_employee_id: string; p_location_id: string }; Returns: string };
+      unlink_employee_card: { Args: { p_employee_id: string }; Returns: boolean };
       portal_link_account: { Args: Record<string, never>; Returns: { state: LinkState } };
       portal_locations: { Args: Record<string, never>; Returns: { id: string; name: string }[] };
       portal_sign_up: {
