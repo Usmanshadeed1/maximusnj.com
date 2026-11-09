@@ -310,6 +310,70 @@ export type PortalStatusJson = {
   pin_locked_until: string | null;
 };
 
+// ---- Reports (Step 10) ------------------------------------------------------------------------------
+export type DashboardReport = {
+  /** False for Staff: they get no money figures. */
+  money: boolean;
+  customers_total: number;
+  customers_new: number;
+  visits: number;
+  visitors: number;
+  transactions: number | null;
+  net_cents: number | null;
+  series: { day: string; visits: number; net_cents: number | null }[];
+};
+
+export type RecentActivityItem = {
+  kind: "visit" | "purchase" | "refund";
+  at: string;
+  customer_id: string;
+  name: string;
+  store: string;
+  amount_cents: number | null;
+};
+
+export type TierDistribution = { base: number; silver: number; gold: number; diamond: number; total: number };
+
+export type TierMovementRow = {
+  month: string;
+  base: number;
+  silver: number;
+  gold: number;
+  diamond: number;
+  qualified: number;
+  upgrades: number;
+  downgrades: number;
+};
+
+export type TrendRow = {
+  month: string;
+  location_id: string;
+  store: string;
+  visits: number;
+  net_cents: number;
+  transactions: number;
+  new_members: number;
+};
+
+export type RaffleSummaryRow = {
+  raffle_id: string;
+  release_id: string;
+  release: string;
+  store: string;
+  scope: RaffleScope;
+  status: RaffleStatus;
+  closes_at: string;
+  winner_count: number;
+  entries: number;
+  online: number;
+  in_store: number;
+  claimed: number;
+  expired: number;
+  declined: number;
+  waiting: number;
+  sales_cents: number;
+};
+
 // ---- Raffles (Step 8) -----------------------------------------------------------------------------
 export type RaffleStatus = "draft" | "open" | "closed" | "drawn" | "completed" | "cancelled";
 export type RaffleScope = "store" | "company";
@@ -674,6 +738,18 @@ export type Database = {
       cancel_raffle: { Args: { p_id: string; p_reason: string }; Returns: RaffleRow };
       staff_enter_raffle: { Args: { p_raffle_id: string; p_customer_id: string }; Returns: RaffleEntryRow };
       remove_raffle_entry: { Args: { p_entry_id: string; p_reason: string }; Returns: RaffleEntryRow };
+      report_dashboard: {
+        Args: { p_from: string; p_to: string; p_location_id?: string | null };
+        Returns: DashboardReport;
+      };
+      report_recent_activity: { Args: { p_location_id?: string | null; p_limit?: number }; Returns: RecentActivityItem[] };
+      report_tier_distribution: { Args: { p_location_id?: string | null }; Returns: TierDistribution };
+      report_tier_movement: { Args: { p_months?: number; p_location_id?: string | null }; Returns: TierMovementRow[] };
+      report_trends: { Args: { p_from: string; p_to: string; p_location_id?: string | null }; Returns: TrendRow[] };
+      report_raffle_summary: {
+        Args: { p_from: string; p_to: string; p_location_id?: string | null };
+        Returns: RaffleSummaryRow[];
+      };
       draw_raffle: { Args: { p_raffle_id: string }; Returns: { entrants: number; winners: number } };
       notify_winners: {
         Args: { p_raffle_id: string; p_count?: number | null };

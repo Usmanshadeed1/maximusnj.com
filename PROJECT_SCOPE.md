@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 9 — Raffles: draw, winners and pickup (built; owner to test). Steps 5, 6, 7 and 8 are also built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
+> **Current step:** Steps 10 and 11 — Reports and audit log (built; owner to test) and Moving data from the old system (tools built and rehearsed; the real run waits for access to the old Supabase project). Steps 5 to 9 are also built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -616,6 +616,16 @@ During the current month, the staff app and the portal show:
 - **Pickup store:** the raffle's store, the Owner's chosen store, or the winner's own home store (§10.1).
 - **CSV export** (Owner/Manager): position, winner yes/no, name, member number, home store, how entered, outcome, how and when told. No email or phone. Cells starting with = + - @ are made safe for spreadsheets.
 
+### 12.4 Step 10 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **Who sees what:** the **Dashboard** is for every employee, limited to the stores they work at (Owner: all). **Staff** see members, visits and recent check-ins but **no money** (no net purchases, no transaction count, no amounts). **Reports** (tier distribution, tiers by month, sales and visits by store, raffle summary) are for the **Owner and Managers**; a Manager only ever gets their assigned stores. This is checked in the database, not just hidden in the page.
+- **Filters:** a store and a date range (New York days, up to one year), with quick choices. They live in the page address, so a view can be bookmarked.
+- **Definitions:** *net purchases* = purchases − refunds (voided entries ignored; trades, membership payments and adjustments are not sales). *Transactions* = everything recorded that is not voided. *Members* = active members whose **home store** is in view; *new* = joined in the range. *Visits* = counted check-ins at the stores in view. Totals read the raw tables, so they match the data to the cent.
+- **Tiers by month** use the monthly awards (test runs left out): how many hold each tier, how many moved up or down compared with the month before, and how many qualified (above the starting tier).
+- **Raffle summary:** raffles that closed in the range, with entries (online / in store), winners, collected, expired, declined, waiting, and sales from collected wins.
+- **Member profile** gains an *Activity timeline* (visits, money, tiers and raffles together) and *Raffle history*, next to the existing visits, spending, tier and award sections.
+- **Audit log** (Owner) gains filters by group, person and dates, paging, and readable lines for member-page, PIN and raffle actions. Member actions are shown as the member.
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -1041,10 +1051,11 @@ This lets the owner test monthly features without waiting a month.
 - Totals match the raw data.
 
 **Owner test:**
-1. Open the Dashboard and filter by store and date. The numbers change.
-2. Open the tier distribution and the raffle summary.
-3. Log in as Staff. The reports are **not** available.
-4. Log in as a Manager. Only their store's numbers appear.
+1. Open the **Dashboard**. Change the store and the dates (or press *Last 7 days*, *This month* …) and press **Show**. The numbers and charts change. Record a purchase and a check-in: the numbers go up.
+2. Open **Reports**: tier distribution, tiers by month (moved up / down), sales and visits by store, and the raffle summary.
+3. Sign in as **Staff**: the Dashboard has no money figures and there is no Reports item. Opening /staff/reports sends you away.
+4. Sign in as a **Manager**: only their own stores appear in the filters and in every number.
+5. Open the **Audit log**: filter by *Raffles*, by a person, or by dates, and press *Older entries*. Open a member: *Activity timeline* and *Raffle history* are there.
 
 ---
 
@@ -1059,9 +1070,11 @@ This lets the owner test monthly features without waiting a month.
 **Automated tests:** a reconciliation report where counts and money totals match; numbers and IDs are unchanged.
 
 **Owner test:**
-1. Read the reconciliation report. The customer count and total sales match the old system.
-2. Search for 3 customers you know. Their member numbers and history look right.
-3. A staff member logs in with their existing account (or accepts a new invite).
+0. *Before anything:* the Owner gives the developer the old project's database connection string (Supabase → the old project → Connect → Session pooler → URI) by putting it in `.env.local` as `LEGACY_DB_URL`. It is only ever read.
+1. Read the **dry-run report**: customer, visit and transaction counts and the money by type match the old system, and every row that was left out is listed with a reason.
+2. After the real import, search for 3 customers you know. Their member numbers (such as MC999999) and their history look right.
+3. Press *Recalculate* on last month in **Monthly update** so tiers are decided from the imported history.
+4. A staff member signs in with a fresh invite (the list of old staff is provided as a file).
 
 ---
 
@@ -1113,6 +1126,23 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
   - set the new MAX sequence to start **above** the highest existing MAX number
 - **Reuse if healthy:** the existing Supabase Auth employee users and the Resend SMTP configuration. Assess both first. If unsuitable, re-invite staff.
 - **Owner action needed:** provide access to (or an export of) the old Supabase project at Step 11.
+
+### 16.1 Step 11 — how the move works 🔧
+
+All of it is `npm run migrate -- <command>` (the code is in `scripts/migrate-legacy.mjs` and `src/lib/migration/legacy.ts`, with tests).
+
+1. **`inventory`** — reads the old database and lists tables, columns, row counts, security rules, functions and triggers. (Read only.)
+2. **`backup`** — copies every old table to files in `migration-output/` with a checksum list. Sign-in accounts are copied without passwords. These files hold personal data, so the folder is ignored by git and must stay private. Also take the old project's own backup from the Supabase dashboard.
+3. **`import --from <backup folder>`** — a **dry run**: it does everything inside one database transaction, checks the totals, writes the report, then undoes it. **`--apply`** does the same and saves it, but **only if the totals match to the cent**; otherwise nothing is saved.
+4. **`reconcile --from <backup folder>`** — checks the new app against the backup at any later time and writes a new report.
+
+What is kept: customer **ids** and **legacy member numbers** (MC999999, MAX…) exactly; names, phone, email, home store, active/inactive, joined date; visits (only the first visit of a New York day counts toward tiers, as in the new app); every transaction with its type, exact cents, date and store (voided ones stay voided; refunds keep the link to their purchase when both are imported). Missing stores are created with the same ids, or old store ids can be mapped to existing ones (`--location-map`, `--default-location`). The MAX sequence is moved above the highest imported MAX number.
+
+What is **not** moved: the paid-membership data (`membership_tiers`, `memberships`) and the old audit log and login links are **archived** in the backup, not imported (§16). Staff sign-in accounts are **not copied**; a CSV of the old staff is produced for the Owner to invite them again. Old tiers are not copied: after the import the Owner presses *Recalculate* for last month and tiers are decided from the imported history.
+
+Nothing is guessed: a row with an unknown type, a bad or duplicate member number, a missing name, an unreadable amount or a missing customer is **not imported** and appears in the report (and a CSV) with the reason. Running the import again never duplicates anything.
+
+⚠️ The old database's real column names are unknown until `inventory` is run. The importer looks for the usual names (for example `phone`, `mobile_phone`, `amount`, `amount_cents`); after the first dry run the report shows exactly what could not be read, and the names can be added in minutes.
 
 ---
 
@@ -1211,3 +1241,7 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 48 | Next in line | Promotes the next position on the same list only when a prize has no live winner |
 | 49 | Collected | Recorded as a normal purchase so it counts toward the tier; collected, expired and declined are final |
 | 50 | Member result | Members see "You won" only after being told; "Not selected" only after the raffle is finished; never a position |
+| 51 | Reports access | The Dashboard is for every employee (no money for Staff); Reports are for the Owner and Managers, Managers limited to their stores, enforced in the database. Built in Step 10 |
+| 52 | Net purchases | Purchases minus refunds; trades, membership payments and adjustments are not sales; voided entries ignored |
+| 53 | Migration safety | Import is a dry run unless --apply; one transaction; totals checked before saving; refuses to save on any mismatch; never duplicates on re-run. Built in Step 11 |
+| 54 | Migration scope | Customers, visits and transactions are imported with their ids and legacy member numbers; paid memberships, old audit log and login links are archived; staff are re-invited; tiers are recalculated afterwards |

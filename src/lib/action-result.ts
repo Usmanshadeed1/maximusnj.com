@@ -106,6 +106,7 @@ const DB_MESSAGES: Record<string, string> = {
   no_one_left: "Everyone on the list has already been offered a spot.",
   unresolved_winners: "Some winners are still waiting. Mark each as claimed, expired or declined first.",
   draw_immutable: "The draw result can't be changed.",
+  range_invalid: "Choose a start date that is on or before the end date (at most one year apart).",
   store_has_history:
     "This store has customers, visits or staff, so it can't be deleted without losing their history. Deactivate it instead.",
 };

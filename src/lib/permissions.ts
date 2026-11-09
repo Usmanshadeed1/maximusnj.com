@@ -111,3 +111,8 @@ export function canManagePortalAccess(actor: EmployeeRole): boolean {
 export function canCreateRaffles(actor: EmployeeRole): boolean {
   return actor === "owner" || actor === "manager";
 }
+
+/** Financial reports (tier distribution, trends, raffle summary) are for the Owner and Managers only (§12.2). */
+export function canViewReports(actor: EmployeeRole): boolean {
+  return actor === "owner" || actor === "manager";
+}

@@ -12,7 +12,8 @@
     "bootstrap:owner": "node --env-file=.env.local scripts/bootstrap-owner.mjs",
     "db:push": "node --env-file=.env.local scripts/supabase-db.mjs push",
     "db:test": "node --env-file=.env.local scripts/run-db-tests.mjs",
-    "db:types": "node --env-file=.env.local scripts/supabase-db.mjs types"
+    "db:types": "node --env-file=.env.local scripts/supabase-db.mjs types",
+    "migrate": "node --env-file=.env.local scripts/migrate-legacy.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

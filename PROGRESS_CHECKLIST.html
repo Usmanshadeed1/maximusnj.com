@@ -190,20 +190,23 @@ const STEPS = [
       "On another winner press Collected, enter an amount and save. Open that member: the purchase is in their history and their spend went up.",
       "Mark every winner collected, expired or declined and press Finish raffle. Press Export CSV to download the list."
     ] },
-  { n: 10, status: "not-started", name: "Reports and audit log",
+  { n: 10, status: "ready-to-test", name: "Reports and audit log",
     goal: "The Owner and Managers see clear dashboards and reports.",
     tests: [
-      "Open the Dashboard and filter by store and date. The numbers change.",
-      "Open the tier distribution and the raffle summary.",
-      "As Staff, the reports are NOT available.",
-      "As a Manager, only their store's numbers appear."
+      "Open the Dashboard. Change the store and dates (or press Last 7 days, This month) and press Show. The numbers and charts change. Record a purchase and a check-in: the numbers go up.",
+      "Open Reports: tier distribution, tiers by month (moved up and down), sales and visits by store, and the raffle summary.",
+      "Sign in as Staff: the Dashboard shows no money and there is no Reports item. Opening /staff/reports sends you away.",
+      "Sign in as a Manager: only their own stores appear in the filters and in every number.",
+      "Open the Audit log and filter it by Raffles, by a person and by dates. Press Older entries. Open a member: Activity timeline and Raffle history are there."
     ] },
-  { n: 11, status: "not-started", name: "Move data from the old system",
-    goal: "Existing customers, member numbers, visits and sales are in the new app.",
+  { n: 11, status: "in-progress", name: "Move data from the old system",
+    goal: "Existing customers, member numbers, visits and sales are in the new app. The tools are built and rehearsed; the real run waits for access to the old system.",
     tests: [
-      "Read the reconciliation report. The customer count and total sales match the old system.",
-      "Search for 3 customers you know. Their numbers and history look right.",
-      "A staff member logs in with their existing account (or a new invite)."
+      "First: give the developer the old project's database connection string (Supabase, old project, Connect, Session pooler). It goes into .env.local as LEGACY_DB_URL on your computer. Never paste it in chat.",
+      "Read the dry-run report. Customer, visit and transaction counts and the money by type match the old system, and every row that was left out is listed with a reason.",
+      "After the real import, search for 3 customers you know. Their member numbers (such as MC999999) and history look right.",
+      "In Monthly update press Recalculate for last month so tiers are decided from the imported history.",
+      "A staff member signs in with a fresh invite (the old staff are listed in a file)."
     ] },
   { n: 12, status: "not-started", name: "Final checks and launch",
     goal: "The app is secure, backed up and live at members.maximusnj.com.",

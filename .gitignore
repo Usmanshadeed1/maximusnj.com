@@ -44,3 +44,6 @@ next-env.d.ts
 # supabase
 /supabase/.branches
 /supabase/.temp
+
+# old-system backups and migration reports hold personal data
+/migration-output/

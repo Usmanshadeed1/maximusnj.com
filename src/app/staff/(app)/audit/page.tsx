@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { History } from "lucide-react";
+import Link from "next/link";
+import { nyWallTimeToInstant } from "@/lib/timezone";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input, Select } from "@/components/ui/form";
 import { EmptyState, PageHeader } from "@/components/ui/page-header";
 import { THead, Table, Td, Th, Tr } from "@/components/ui/table";
 import { formatBusinessDate, formatBusinessDateTime, formatCalendarDate, formatCents, formatMonthYear } from "@/lib/format";
@@ -12,7 +16,7 @@ import type { AuditLogRow } from "@/types/database";
 
 export const metadata: Metadata = { title: "Audit log" };
 
-const PAGE_SIZE = 200;
+const PAGE_SIZE = 100;
 
 const ACTION_LABELS: Record<string, string> = {
   "location.create": "Store added",
@@ -39,7 +43,43 @@ const ACTION_LABELS: Record<string, string> = {
   "tier_rollover.test_run": "Month-end test run",
   "tier_awards.recalculate": "Tiers recalculated",
   "customer.tier_recalculate": "Member's tier recalculated",
+  "customer.login_linked": "Online login linked",
+  "customer.login_unlinked": "Online login removed",
+  "customer.online_signup": "Member joined online",
+  "customer.pin_set": "PIN set",
+  "customer.pin_change": "PIN changed",
+  "customer.pin_reset": "PIN reset by staff",
+  "customer.pin_locked": "PIN locked after wrong tries",
+  "customer.notify_prefs_change": "Raffle notification choice changed",
+  "raffle.release_create": "Release created",
+  "raffle.release_update": "Release edited",
+  "raffle.create": "Raffle added",
+  "raffle.update": "Raffle edited",
+  "raffle.publish": "Raffle opened for entries",
+  "raffle.cancel": "Raffle cancelled",
+  "raffle.entry_add": "Raffle entry added",
+  "raffle.entry_withdraw": "Raffle entry withdrawn",
+  "raffle.entry_remove": "Raffle entry removed",
+  "raffle.draw": "Raffle drawn",
+  "raffle.notify": "Winners notified",
+  "raffle.winner_notified": "Winner marked as told",
+  "raffle.winner_expired": "Winner marked as expired",
+  "raffle.winner_declined": "Winner marked as declined",
+  "raffle.winner_claimed": "Winner collected",
+  "raffle.next_in_line": "Next in line promoted",
+  "raffle.complete": "Raffle finished",
 };
+
+/** The groups offered in the filter, as action prefixes. */
+const CATEGORIES: { key: string; label: string; prefixes: string[] }[] = [
+  { key: "people", label: "Employees", prefixes: ["employee."] },
+  { key: "stores", label: "Stores", prefixes: ["location."] },
+  { key: "customers", label: "Customers", prefixes: ["customer.create", "customer.update", "customer.status_change", "customer.merge"] },
+  { key: "portal", label: "Member page and PIN", prefixes: ["customer.login", "customer.online", "customer.pin", "customer.notify"] },
+  { key: "money", label: "Money", prefixes: ["transaction."] },
+  { key: "tiers", label: "Tiers", prefixes: ["tier_", "customer.tier"] },
+  { key: "raffles", label: "Raffles", prefixes: ["raffle."] },
+];
 
 const CUSTOMER_FIELD_LABELS: Record<string, string> = {
   first_name: "first name",
@@ -132,6 +172,48 @@ function describeChange(
       }
       return `${who}: ${kind} ${amount}, dated ${formatBusinessDate(String(d.occurred_at))}${d.closed_month ? " (past month)" : ""}`;
     }
+    case "customer.login_linked":
+      return `${subject ?? "Customer"}: linked ${after.linked_via === "staff" ? "by staff" : after.linked_via === "online_signup" ? "at online sign-up" : "automatically"}`;
+    case "customer.login_unlinked":
+      return `${subject ?? "Customer"}${row.reason ? ` — ${row.reason === "email_changed" ? "their email was changed" : row.reason}` : ""}`;
+    case "customer.online_signup":
+      return `${subject ?? "Customer"} (${String(after.member_number)})`;
+    case "customer.pin_set":
+    case "customer.pin_change":
+    case "customer.pin_locked":
+      return subject ?? "";
+    case "customer.pin_reset":
+      return `${subject ?? "Customer"}${row.reason ? ` — ${row.reason}` : ""}`;
+    case "customer.notify_prefs_change":
+      return `${subject ?? "Customer"}: ${(Array.isArray(after.raffle_notify_prefs) ? after.raffle_notify_prefs : []).join(", ") || "none"}`;
+    case "raffle.release_create":
+      return `${String(after.name)}: ${String(after.scope === "company" ? "one raffle for all stores" : `${Array.isArray(after.raffles) ? after.raffles.length : 1} store raffle(s)`)}, ${String(after.winner_count)} winner(s)`;
+    case "raffle.release_update":
+      return String(after.name ?? "");
+    case "raffle.create":
+      return `${Array.isArray(after.raffles) ? after.raffles.length : 1} raffle(s) added`;
+    case "raffle.update":
+      return `Winners ${String(before.winner_count)} → ${String(after.winner_count)}; closes ${formatBusinessDateTime(String(after.closes_at))}`;
+    case "raffle.publish":
+      return "Draft → open";
+    case "raffle.cancel":
+      return row.reason ?? "";
+    case "raffle.entry_add":
+    case "raffle.entry_withdraw":
+      return `${customers.get(String((after.customer_id ?? before.customer_id) as string)) ?? subject ?? "Member"}${after.channel ? ` (${after.channel === "online" ? "online" : "in store"})` : ""}`;
+    case "raffle.entry_remove":
+      return `${customers.get(String(before.customer_id)) ?? "Member"} — ${row.reason ?? ""}`;
+    case "raffle.draw":
+      return `${String(after.entrants)} people ranked, ${String(after.winners)} winner(s)`;
+    case "raffle.notify":
+      return `${String(after.notified)} told, ${String(after.call_manually)} to phone, ${String(after.emails_queued)} email(s)`;
+    case "raffle.winner_notified":
+    case "raffle.winner_expired":
+    case "raffle.winner_declined":
+    case "raffle.winner_claimed":
+      return `#${String(before.position ?? "")} ${customers.get(String(after.customer_id)) ?? ""}${row.reason ? ` — ${row.reason}` : ""}`.trim();
+    case "raffle.next_in_line":
+      return `#${String(after.position)} ${customers.get(String(after.customer_id)) ?? ""}`.trim();
     case "location.delete":
       return `${String(before.name)} (${String(before.code)})`;
     case "location.create":
@@ -159,13 +241,37 @@ function describeChange(
   }
 }
 
-export default async function AuditLogPage() {
+type AuditSearch = { category?: string; from?: string; to?: string; who?: string; before?: string };
+
+function addDay(date: string): string {
+  const d = new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10)) + 24 * 60 * 60 * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+export default async function AuditLogPage({ searchParams }: PageProps<"/staff/audit">) {
   await requireEmployee(["owner"]);
+  const raw = await searchParams;
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+  const search: AuditSearch = { category: one(raw.category), from: one(raw.from), to: one(raw.to), who: one(raw.who), before: one(raw.before) };
+  const category = CATEGORIES.find((c) => c.key === search.category);
+  const dateOk = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+  const from = dateOk(search.from);
+  const to = dateOk(search.to);
+  const who = search.who && /^[0-9a-f-]{36}$/i.test(search.who) ? search.who : undefined;
+  const before = search.before && /^\d{1,15}$/.test(search.before) ? Number(search.before) : undefined;
+
   const supabase = await createSupabaseServerClient();
+  let query = supabase.from("audit_logs").select("*").order("id", { ascending: false }).limit(PAGE_SIZE);
+  if (category) query = query.or(category.prefixes.map((p) => `action.like.${p}*`).join(","));
+  // Days are New York days; the stored times are exact instants.
+  if (from) query = query.gte("created_at", nyWallTimeToInstant(from, "00:00").toISOString());
+  if (to) query = query.lt("created_at", nyWallTimeToInstant(addDay(to), "00:00").toISOString());
+  if (who) query = query.eq("actor_id", who);
+  if (before) query = query.lt("id", before);
 
   const [logsRes, employeesRes, storesRes] = await Promise.all([
-    supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(PAGE_SIZE),
-    supabase.from("employees").select("id, first_name, last_name"),
+    query,
+    supabase.from("employees").select("id, first_name, last_name").order("first_name"),
     supabase.from("locations").select("id, name"),
   ]);
 
@@ -176,13 +282,13 @@ export default async function AuditLogPage() {
   const customerIds = [
     ...new Set(
       logs.flatMap((l) => {
-        if (!l.entity_id) return [];
-        if (l.entity_type === "customer") return [l.entity_id];
-        if (l.entity_type === "transaction") {
-          const details = (l.after ?? l.before) as { customer_id?: string } | null;
-          return details?.customer_id ? [details.customer_id] : [];
+        const ids: string[] = [];
+        if (l.entity_id && l.entity_type === "customer") ids.push(l.entity_id);
+        if (l.actor_type === "customer" && l.actor_id) ids.push(l.actor_id);
+        for (const detail of [l.after, l.before] as ({ customer_id?: string } | null)[]) {
+          if (detail && typeof detail === "object" && typeof detail.customer_id === "string") ids.push(detail.customer_id);
         }
-        return [];
+        return ids;
       }),
     ),
   ];
@@ -190,20 +296,93 @@ export default async function AuditLogPage() {
     ? await supabase.from("customers").select("id, first_name, last_name").in("id", customerIds)
     : { data: [] };
   const customers = new Map((customerRows ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`]));
+  const actorName = (row: AuditLogRow) =>
+    row.actor_type === "system"
+      ? "System"
+      : row.actor_type === "customer"
+        ? `${customers.get(row.actor_id ?? "") ?? "A member"} (member)`
+        : (names.get(row.actor_id ?? "") ?? "Unknown");
+
+  const filtered = Boolean(category || from || to || who);
+  const next = logs.length === PAGE_SIZE ? logs[logs.length - 1].id : null;
+  const nextParams = new URLSearchParams();
+  if (category) nextParams.set("category", category.key);
+  if (from) nextParams.set("from", from);
+  if (to) nextParams.set("to", to);
+  if (who) nextParams.set("who", who);
+  if (next !== null) nextParams.set("before", String(next));
 
   return (
     <>
       <PageHeader
         title="Audit log"
-        description={`Every sensitive change, newest first (last ${PAGE_SIZE}). Entries can't be edited or deleted.`}
+        description="Every sensitive change, newest first. Entries can't be edited or deleted."
       />
+
+      <Card className="mb-6 p-4 sm:p-5">
+        <form method="get" action="/staff/audit" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-end">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="category" className="text-sm font-semibold">
+              What
+            </label>
+            <Select id="category" name="category" defaultValue={category?.key ?? ""}>
+              <option value="">Everything</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="who" className="text-sm font-semibold">
+              Who
+            </label>
+            <Select id="who" name="who" defaultValue={who ?? ""}>
+              <option value="">Anyone</option>
+              {(employeesRes.data ?? []).map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.first_name} {e.last_name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="from" className="text-sm font-semibold">
+              From
+            </label>
+            <Input id="from" name="from" type="date" defaultValue={from ?? ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="to" className="text-sm font-semibold">
+              To
+            </label>
+            <Input id="to" name="to" type="date" defaultValue={to ?? ""} />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" size="lg">
+              Filter
+            </Button>
+            {(filtered || before) && (
+              <Link href="/staff/audit" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                Clear
+              </Link>
+            )}
+          </div>
+        </form>
+      </Card>
+
       <Card>
         {logsRes.error ? (
           <p role="alert" className="p-6 text-sm text-destructive">
             Couldn&apos;t load the audit log. Refresh the page to try again.
           </p>
         ) : logs.length === 0 ? (
-          <EmptyState icon={History} title="Nothing logged yet" description="Changes to stores and employees appear here." />
+          <EmptyState
+            icon={History}
+            title={filtered || before ? "Nothing matches" : "Nothing logged yet"}
+            description={filtered || before ? "Try a wider date range or a different filter." : "Changes to stores and employees appear here."}
+          />
         ) : (
           <Table>
             <THead>
@@ -218,9 +397,7 @@ export default async function AuditLogPage() {
               {logs.map((row) => (
                 <Tr key={row.id}>
                   <Td className="whitespace-nowrap text-muted-foreground">{formatBusinessDateTime(row.created_at)}</Td>
-                  <Td className="whitespace-nowrap">
-                    {row.actor_type === "system" ? "System" : (names.get(row.actor_id ?? "") ?? "Unknown")}
-                  </Td>
+                  <Td className="whitespace-nowrap">{actorName(row)}</Td>
                   <Td>
                     <p className="font-medium whitespace-nowrap">{ACTION_LABELS[row.action] ?? row.action}</p>
                     {/* On phones the Details column is hidden, so show the details here. */}
@@ -235,6 +412,14 @@ export default async function AuditLogPage() {
           </Table>
         )}
       </Card>
+
+      {next !== null && (
+        <div className="mt-5 flex justify-center">
+          <Link href={`/staff/audit?${nextParams.toString()}`} className={buttonVariants({ variant: "outline", size: "lg" })}>
+            Older entries
+          </Link>
+        </div>
+      )}
     </>
   );
 }

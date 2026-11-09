@@ -21,10 +21,13 @@ import { formatPhone } from "@/lib/phone";
 import { requireEmployee } from "@/server/auth";
 import { getCustomer, getVisitSummary } from "@/server/customers";
 import { getPortalStatus } from "@/server/portal-staff";
+import { getMemberRaffles } from "@/server/member-raffles";
+import { buildTimeline } from "@/lib/timeline";
 import { getAwardHistory, isTestToolsEnabled } from "@/server/tier-awards";
 import { getCustomerTierView } from "@/server/tiers";
 import { getSpend, getTransactions } from "@/server/transactions";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
+import { ActivityTimelineCard, RaffleHistoryCard } from "./history-cards";
 import { PortalAccessCard } from "./portal-access-card";
 import { SpendingCard, TransactionsCard } from "./spending-cards";
 import { MonthlyTiersCard } from "./monthly-tiers-card";
@@ -37,7 +40,7 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const [customer, visits, spend, transactions, tierView, awards, testTools, portalStatus] = await Promise.all([
+  const [customer, visits, spend, transactions, tierView, awards, testTools, portalStatus, raffles] = await Promise.all([
     getCustomer(id),
     getVisitSummary(id),
     getSpend(id),
@@ -46,10 +49,17 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
     getAwardHistory(id),
     canManageTiers(employee.role) ? isTestToolsEnabled() : Promise.resolve(false),
     getPortalStatus(id),
+    getMemberRaffles(id),
   ]);
   if (!customer) notFound();
 
   const name = `${customer.first_name} ${customer.last_name}`;
+  const timeline = buildTimeline({
+    visits: visits.recent,
+    transactions,
+    awards,
+    raffles: raffles.map((r) => ({ at: r.at, release: r.release, store: r.store, channel: r.channel, status: r.status, outcome: r.outcome })),
+  });
   const isMerged = Boolean(customer.merged_into_id);
   const justRegistered = flags.new === "1";
 
@@ -175,6 +185,10 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
             canVoid={canVoidTransactions(employee.role)}
             canRecord={!isMerged && customer.status === "active"}
           />
+
+          <ActivityTimelineCard items={timeline} />
+
+          <RaffleHistoryCard raffles={raffles} />
 
           {!isMerged && portalStatus && (
             <PortalAccessCard
