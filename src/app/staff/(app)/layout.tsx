@@ -31,7 +31,8 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
         <StaffNav items={nav} />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col lg:overflow-y-auto">
+      {/* `relative` keeps hidden screen-reader text inside this scroll area, so the page never gets a second scrollbar. */}
+      <div className="relative flex min-w-0 flex-1 flex-col lg:overflow-y-auto">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-4 py-3 sm:px-6">
           <Link
             href="/staff/select-store"
