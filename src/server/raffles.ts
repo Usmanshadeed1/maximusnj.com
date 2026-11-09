@@ -2,7 +2,16 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { type RafflePhase, rafflePhase } from "@/lib/raffles";
 import { getStoreNameMap } from "@/server/customers";
-import type { EmployeeRole, EntryChannel, EntryStatus, RaffleEntryRow, RaffleReleaseRow, RaffleRow } from "@/types/database";
+import type {
+  EmployeeRole,
+  EntryChannel,
+  EntryStatus,
+  RaffleDrawResultRow,
+  RaffleEntryRow,
+  RaffleReleaseRow,
+  RaffleRow,
+  WinnerOutcome,
+} from "@/types/database";
 
 export type RaffleSummary = RaffleRow & {
   phase: RafflePhase;
@@ -101,13 +110,83 @@ export type EntryView = {
   removedReason: string | null;
 };
 
+/** One line of the ranked list after the draw. */
+export type ResultView = {
+  id: string;
+  position: number;
+  isWinner: boolean;
+  outcome: WinnerOutcome;
+  /** How Notify handled them: told, or staff must phone them. Null until Notify has looked at them. */
+  notifyState: "notified" | "call_manually" | null;
+  notifiedVia: string | null;
+  notifiedAt: string | null;
+  deadlineAt: string | null;
+  claimedAt: string | null;
+  customerId: string;
+  name: string;
+  memberNumber: string;
+  homeStore: string;
+  channel: EntryChannel | null;
+  note: string | null;
+  /** Latest email to this winner, if one was queued. */
+  email: { status: "queued" | "sent" | "failed"; error: string | null } | null;
+  /** Told, still waiting, and the claim time has run out: staff should mark it expired. */
+  deadlinePassed: boolean;
+};
+
 export type RaffleDetail = {
   release: RaffleReleaseRow;
   raffle: RaffleSummary;
   /** The release's other raffles (for the "one store per release" note). */
   siblings: RaffleSummary[];
   entries: EntryView[];
+  /** The full ranked list (empty until the draw). */
+  results: ResultView[];
 };
+
+async function getResults(raffleId: string, names: Map<string, string>): Promise<ResultView[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("raffle_draw_results").select("*").eq("raffle_id", raffleId).order("position").limit(5000);
+  const rows: RaffleDrawResultRow[] = data ?? [];
+  if (rows.length === 0) return [];
+
+  const customerIds = [...new Set(rows.map((r) => r.customer_id))];
+  const entryIds = rows.map((r) => r.entry_id);
+  const resultIds = rows.map((r) => r.id);
+  const [customersRes, entriesRes, notesRes] = await Promise.all([
+    supabase.from("customers").select("id, first_name, last_name, member_number, home_location_id").in("id", customerIds),
+    supabase.from("raffle_entries").select("id, channel").in("id", entryIds),
+    supabase.from("notifications").select("related_id, status, error, created_at").eq("channel", "email").in("related_id", resultIds).order("created_at"),
+  ]);
+  const customers = new Map((customersRes.data ?? []).map((c) => [c.id, c]));
+  const channels = new Map((entriesRes.data ?? []).map((e) => [e.id, e.channel]));
+  const emails = new Map<string, { status: "queued" | "sent" | "failed"; error: string | null }>();
+  for (const n of notesRes.data ?? []) emails.set(n.related_id, { status: n.status, error: n.error });
+
+  const now = Date.now();
+  return rows.map((r) => {
+    const c = customers.get(r.customer_id);
+    return {
+      id: r.id,
+      position: r.position,
+      isWinner: r.is_winner,
+      outcome: r.outcome,
+      notifyState: r.notify_state,
+      notifiedVia: r.notified_via,
+      notifiedAt: r.notified_at,
+      deadlineAt: r.claim_deadline_at,
+      claimedAt: r.claimed_at,
+      customerId: r.customer_id,
+      name: c ? `${c.first_name} ${c.last_name}` : "Member",
+      memberNumber: c?.member_number ?? "",
+      homeStore: c ? (names.get(c.home_location_id) ?? "") : "",
+      channel: channels.get(r.entry_id) ?? null,
+      note: r.handled_note,
+      email: emails.get(r.id) ?? null,
+      deadlinePassed: r.outcome === "notified" && r.claim_deadline_at !== null && new Date(r.claim_deadline_at).getTime() < now,
+    };
+  });
+}
 
 export async function getRaffleDetail(releaseId: string, raffleId: string, role: EmployeeRole): Promise<RaffleDetail | null> {
   const release = await getRelease(releaseId, role);
@@ -152,7 +231,8 @@ export async function getRaffleDetail(releaseId: string, raffleId: string, role:
       };
     });
   }
-  return { release: release.release, raffle, siblings: release.raffles.filter((r) => r.id !== raffleId), entries };
+  const results = raffle.entryCount !== null ? await getResults(raffleId, names) : [];
+  return { release: release.release, raffle, siblings: release.raffles.filter((r) => r.id !== raffleId), entries, results };
 }
 
 /** Stores the signed-in employee may set raffles up for (Owner: all; Manager: their own). */

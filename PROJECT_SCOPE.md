@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 8 — Raffles: setup and entry (built; owner to test). Steps 5, 6 and 7 are also built and waiting for the owner's approval (Step 7's login test waits for the email sender).
+> **Current step:** Step 9 — Raffles: draw, winners and pickup (built; owner to test). Steps 5, 6, 7 and 8 are also built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -602,6 +602,20 @@ During the current month, the staff app and the portal show:
 - **Release picture:** a web address (https://…) for now; uploading pictures can come later.
 - **Not in Step 8:** the draw, ranked list, winners, notifications, claiming and CSV export (Step 9); "My results" in the member page (Step 9).
 
+### 10.9 Step 9 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **Who:** the Owner and a Manager (own-store raffles) draw, press Notify, export and finish a raffle. Any employee who works with the raffle (own store or all-stores) marks outcomes, presses Next in line and records a collection.
+- **Drawing:** possible only after the closing time, once, with nobody having entered → refused. The database orders every active entrant with secure random bytes and saves the whole ranked list. The first *winners* positions are winners. The list can never be edited or deleted.
+- **Notify:** looks at the winners not yet looked at, lowest position first, up to the number the admin types (default: all waiting). A winner is told only by methods the **raffle allows and the member chose**: Member page (shown at once) and Email (queued, then sent by the server). Nothing in common, or only email chosen but no email address → **Call manually**; staff phone them and press **I phoned them**. Telling a winner starts their claim deadline (the raffle's hours). Pressing Notify again never tells anyone twice.
+- **Email:** sent through any SMTP service (the business Gmail for now, Resend later). It is switched on by five settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`). Until they exist, emails are saved as failed with the reason "Email isn't set up yet" and **Send emails again** sends them once it is. The email has no link and no login code. Every message is saved in `notifications`.
+- **Outcomes:** *Not told yet* → *Told, waiting* → *Collected* | *Expired* | *Declined*. Collected, Expired and Declined are final. **Deadline passed** is shown when a told winner is still waiting after the claim time; staff then mark it expired (nothing expires by itself).
+- **Next in line:** promotes the next position on the same list, only when a prize has no live winner (a live winner is not expired or declined). Refused with a clear message when every prize still has a live winner or the list is used up. Promoted people are then told with Notify.
+- **Collected:** staff enter the amount paid and the store. It is recorded as a normal **purchase** (note "Raffle win: …") through the same rules as any purchase, linked to the winner row, so it counts toward the tier.
+- **Finish raffle:** allowed when no winner is waiting. A finished raffle shows **Not selected** to members who did not win.
+- **What members see:** after the draw, *waiting* (until told), then *You won!* with the pickup store and deadline, *Collected*, *Expired*, *Declined*, or (once the raffle is finished) *Not selected*. Never a position or anybody else's result. A winner is not shown as won until they have been told, because the next person on the list may still be promoted.
+- **Pickup store:** the raffle's store, the Owner's chosen store, or the winner's own home store (§10.1).
+- **CSV export** (Owner/Manager): position, winner yes/no, name, member number, home store, how entered, outcome, how and when told. No email or phone. Cells starting with = + - @ are made safe for spreadsheets.
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -716,8 +730,8 @@ All tables have `id uuid` primary keys (except where noted), `created_at timesta
 | `raffle_releases` | `name`, `description`, `image_url`, `release_date`, `created_by` |
 | `raffles` | `release_id`, `scope` (`store`,`company`), `location_id` (null when company), `pickup_rule` (`raffle_store`,`home_store`,`specific_store`), `pickup_location_id`, `winner_count` 1–10000, `opens_at`, `closes_at`, `claim_deadline_hours` 1–720, `allowed_channels` text[] (`email`,`portal`), `status` (`draft`,`open`,`closed`,`drawn`,`completed`,`cancelled`), `cancelled_reason`, `drawn_at`, `drawn_by`; check `closes_at > opens_at`; **unique per (`release_id`, `location_id`) and one company-wide per release** (cancelled ones excluded) |
 | `raffle_entries` | `raffle_id`, `release_id`, `customer_id`, `channel` (`online`,`in_store`), `entered_by_employee_id` (set for in-store entries), `status` (`active`,`withdrawn`,`removed`), `removed_reason`, `removed_by`, `ended_at`; **unique (`release_id`, `customer_id`) where `status = 'active'`**; (`raffle_id`, `release_id`) must match a raffle |
-| `raffle_draw_results` | `raffle_id`, `position`, `entry_id`, `customer_id`, `outcome` (`pending`,`notified`,`claimed`,`expired`,`declined`), `notified_at`, `notified_via`, `claim_deadline_at`, `claimed_at`, `transaction_id`, `handled_by`; **unique (`raffle_id`, `position`)**; rows are never deleted |
-| `notifications` | `customer_id`, `channel`, `template`, `related_type`, `related_id`, `status`, `sent_at`, `error` |
+| `raffle_draw_results` | `raffle_id`, `position`, `entry_id`, `customer_id`, `is_winner`, `outcome` (`pending`,`notified`,`claimed`,`expired`,`declined`), `notify_state` (`notified`,`call_manually`), `notified_at`, `notified_via`, `claim_deadline_at`, `claimed_at`, `transaction_id`, `handled_by`, `handled_note`; **unique (`raffle_id`, `position`)**; rows are never deleted, and position / entrant never change |
+| `notifications` | `customer_id`, `channel` (`email`,`portal`), `template`, `related_type`, `related_id`, `status` (`queued`,`sent`,`failed`), `attempts`, `sent_at`, `error` |
 | `app_settings` | `key` (primary key), `value` jsonb, `updated_by`, `updated_at` (for example `checkin_duplicate_window_minutes`, `kiosk_lock_minutes`) |
 | `audit_logs` | `actor_type`, `actor_id`, `action`, `entity_type`, `entity_id`, `before` jsonb, `after` jsonb, `reason`, `created_at`; **append-only** (no update or delete privileges) |
 
@@ -1001,12 +1015,14 @@ This lets the owner test monthly features without waiting a month.
 - A claimed purchase counts toward the tier.
 
 **Owner test:**
-1. Close a raffle with several test entries and click **Draw**. You see the full list, #1 to the last name.
-2. Try to draw again. It's blocked.
-3. Click Notify. A winner who chose email gets an email, and the portal shows "You won".
-4. Set a raffle to "no notifications". The winners show "Call manually".
-5. Mark winner #1 as Expired and click "Next in line". The next person becomes a winner.
-6. Mark a winner as Claimed and record their purchase. Their spend goes up.
+0. *To get a raffle that has closed quickly:* create one that opens now and closes in a few minutes (Raffles → New release), open it, enter 4 or 5 test members in store, and wait until it closes. (The test site has no shortcut: the draw is real.)
+1. Open that raffle. Press **Draw winners** and confirm. You see the full ranked list, #1 down to the last name, with the first winners highlighted.
+2. The Draw button is gone. The draw cannot be repeated.
+3. Press **Notify**. A winner who chose email AND whose raffle allows email is emailed (the email waits until the email sender is connected, then **Send emails again**); a winner who chose the member page sees **You won!** on their Raffles tab.
+4. Make another raffle with no notification methods ticked. After its draw, **Notify** marks every winner **Call manually**. Press **I phoned them** for one: they are now told.
+5. On winner #1 press **Expired**, then **Next in line**. The next person on the list becomes a winner. There is no new draw.
+6. On another winner press **Collected**, enter an amount and save. Open that member: the purchase is in their history and their spend went up.
+7. Mark every winner collected, expired or declined, then press **Finish raffle**. Press **Export CSV** to download the list.
 
 ---
 
@@ -1190,3 +1206,8 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 43 | Raffle set-up | A release creates one draft raffle per ticked store, or one all-stores raffle (Owner only); the Owner or Manager opens each when ready. Built in Step 8 |
 | 44 | Raffle edits | A draft changes freely; once open, the store and a passed opening time are fixed; closed raffles are locked; cancelling needs a reason |
 | 45 | Removed entries | Staff removing an entry needs a reason, and the member cannot re-enter online afterwards; staff can add them again in store |
+| 46 | The draw | Once, after closing, by the Owner or the store's Manager; a full ranked list from secure random bytes, saved permanently; no re-draw. Built in Step 9 |
+| 47 | Telling winners | Only by methods the raffle allows AND the member chose; otherwise "Call manually". Email is sent by the server through SMTP once it is set up; every message is logged |
+| 48 | Next in line | Promotes the next position on the same list only when a prize has no live winner |
+| 49 | Collected | Recorded as a normal purchase so it counts toward the tier; collected, expired and declined are final |
+| 50 | Member result | Members see "You won" only after being told; "Not selected" only after the raffle is finished; never a position |

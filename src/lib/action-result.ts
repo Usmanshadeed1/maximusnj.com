@@ -94,6 +94,18 @@ const DB_MESSAGES: Record<string, string> = {
   entered_other_raffle: "This member has already entered another store's raffle for this release.",
   entry_removed: "Staff removed this entry. Please ask in a store.",
   not_active: "There is no active entry to change.",
+  already_drawn: "This raffle has already been drawn. It can't be drawn again.",
+  raffle_not_closed: "The raffle hasn't closed yet. The draw is possible only after the closing time.",
+  no_entries: "Nobody has entered this raffle, so there is nothing to draw.",
+  not_drawn: "The raffle hasn't been drawn yet.",
+  count_invalid: "Enter how many winners to notify.",
+  not_a_winner: "That person isn't a winner right now.",
+  outcome_invalid: "That change isn't possible for this winner.",
+  outcome_final: "This winner's result is final and can't be changed.",
+  no_open_slot: "Every prize still has a winner who hasn't expired or declined, so there is nobody to promote.",
+  no_one_left: "Everyone on the list has already been offered a spot.",
+  unresolved_winners: "Some winners are still waiting. Mark each as claimed, expired or declined first.",
+  draw_immutable: "The draw result can't be changed.",
   store_has_history:
     "This store has customers, visits or staff, so it can't be deleted without losing their history. Deactivate it instead.",
 };

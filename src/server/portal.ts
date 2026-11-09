@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { TierKey } from "@/lib/tier/engine";
-import type { NotifyPref, PortalOverviewJson, PortalRaffleJson, RafflePickupRule } from "@/types/database";
+import type { NotifyPref, PortalOverviewJson, PortalRaffleJson, PortalRaffleResult, RafflePickupRule } from "@/types/database";
 import { type ProjectionView, toProjectionView, toRuleSetView } from "@/server/tiers";
 
 /** Everything the member pages show. Built from `portal_overview()`, which never includes notes or trades. */
@@ -129,6 +129,8 @@ export type PortalRaffle = {
   enteredOther: boolean;
   /** Staff removed their entry, so they can't enter again online. */
   removed: boolean;
+  /** Their own result once the raffle has been drawn. Never a position or anyone else's result. */
+  result: PortalRaffleResult | null;
 };
 
 export async function getPortalRaffles(): Promise<PortalRaffle[]> {
@@ -151,5 +153,6 @@ export async function getPortalRaffles(): Promise<PortalRaffle[]> {
     entered: r.entered,
     enteredOther: r.entered_other,
     removed: r.removed,
+    result: r.result,
   }));
 }

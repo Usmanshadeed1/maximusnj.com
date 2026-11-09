@@ -9,10 +9,14 @@ import { formatBusinessDateTime } from "@/lib/format";
 import { PHASE_INFO, describeChannels } from "@/lib/raffles";
 import { requireEmployee } from "@/server/auth";
 import { searchCustomers, getStoreNameMap } from "@/server/customers";
-import { getRaffleDetail } from "@/server/raffles";
+import { isEmailConfigured } from "@/server/email";
+import { getRaffleDetail, getStoresForRaffles } from "@/server/raffles";
+import { getSelectedStore } from "@/server/store-context";
 import { publishRaffleAction, enterMemberAction } from "@/server/actions/raffles";
 import { CustomerSearch } from "../../../customers/customer-search";
 import { CancelRaffleDialog, RemoveEntryDialog } from "../../raffle-forms";
+import { DrawDialog } from "./result-dialogs";
+import { ResultsCard } from "./results-card";
 
 export const metadata: Metadata = { title: "Raffle" };
 
@@ -23,7 +27,7 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
   const [{ releaseId, raffleId }, flags] = await Promise.all([params, searchParams]);
   const detail = await getRaffleDetail(releaseId, raffleId, employee.role);
   if (!detail) notFound();
-  const { release, raffle, siblings, entries } = detail;
+  const { release, raffle, siblings, entries, results } = detail;
 
   const q = typeof flags.q === "string" ? flags.q.trim() : "";
   const accepting = raffle.phase === "open";
@@ -31,10 +35,15 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
   const activeEntries = entries.filter((e) => e.status === "active");
   const pastEntries = entries.filter((e) => e.status !== "active");
   const message = typeof flags.error === "string" ? flags.error : null;
+  const okMessage = typeof flags.ok === "string" ? flags.ok : null;
+  const canDraw = raffle.canManage && raffle.phase === "closed" && activeEntries.length > 0;
+  const drawn = raffle.phase === "drawn" || raffle.phase === "completed";
 
-  const [results, storeNames] = await Promise.all([
+  const [found, storeNames, stores, selectedStore] = await Promise.all([
     accepting && q ? searchCustomers(q) : Promise.resolve([]),
     getStoreNameMap(),
+    drawn ? getStoresForRaffles() : Promise.resolve([]),
+    drawn ? getSelectedStore() : Promise.resolve(null),
   ]);
   const enteredIds = new Set(activeEntries.map((e) => e.customerId));
 
@@ -49,6 +58,11 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
       {message && (
         <div role="alert" className="mb-5 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/8 px-5 py-3.5 text-sm font-medium text-destructive">
           <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" /> {message}
+        </div>
+      )}
+      {okMessage && (
+        <div role="status" className="mb-5 flex items-start gap-2 rounded-xl border border-success/30 bg-success/8 px-5 py-3.5 text-sm font-medium text-success">
+          <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0" /> {okMessage}
         </div>
       )}
       {(flags.published === "1" || flags.saved === "1" || flags.entered === "1") && (
@@ -80,12 +94,13 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
                   </Button>
                 </form>
               )}
+              {canDraw && <DrawDialog releaseId={releaseId} raffleId={raffleId} winners={raffle.winner_count} />}
               {editable && (
                 <Link href={`/staff/raffles/${releaseId}/${raffleId}/edit`} className={buttonVariants({ variant: "outline", size: "lg" })}>
                   <Pencil aria-hidden /> Edit
                 </Link>
               )}
-              {["draft", "upcoming", "open", "closed"].includes(raffle.phase) && (
+              {["draft", "upcoming", "open", "closed"].includes(raffle.phase) && !drawn && (
                 <CancelRaffleDialog releaseId={releaseId} raffleId={raffleId} label={raffle.storeName} />
               )}
             </div>
@@ -113,6 +128,20 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
         )}
       </Card>
 
+      {drawn && results.length > 0 && (
+        <ResultsCard
+          releaseId={releaseId}
+          raffleId={raffleId}
+          results={results}
+          winnerCount={raffle.winner_count}
+          completed={raffle.phase === "completed"}
+          canManage={raffle.canManage}
+          stores={stores}
+          defaultStoreId={selectedStore?.id ?? stores[0]?.id ?? ""}
+          emailReady={isEmailConfigured()}
+        />
+      )}
+
       {/* In-store entry */}
       {raffle.entryCount !== null && (
         <Card className="mt-6 p-5 sm:p-6">
@@ -123,10 +152,10 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
             <>
               <p className="mt-1 mb-4 text-sm text-muted-foreground">Scan their card or search by name, phone or email.</p>
               <CustomerSearch initialQuery={q} basePath={`/staff/raffles/${releaseId}/${raffleId}`} />
-              {q && results.length === 0 && <p className="text-sm text-muted-foreground">No member found. Register them first, then come back.</p>}
-              {results.length > 0 && (
+              {q && found.length === 0 && <p className="text-sm text-muted-foreground">No member found. Register them first, then come back.</p>}
+              {found.length > 0 && (
                 <ul className="divide-y rounded-lg border">
-                  {results.slice(0, 8).map((c) => {
+                  {found.slice(0, 8).map((c) => {
                     const already = enteredIds.has(c.id);
                     const inactive = c.status !== "active";
                     return (

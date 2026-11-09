@@ -23,6 +23,7 @@ const raffle = (overrides: Partial<PortalRaffle> = {}): PortalRaffle => ({
   entered: false,
   enteredOther: false,
   removed: false,
+  result: null,
   ...overrides,
 });
 
@@ -71,5 +72,35 @@ describe("RaffleCard", () => {
     const html = render(raffle({ entered: true })).toLowerCase();
     expect(html).not.toContain("entries");
     expect(html).not.toContain("people entered");
+  });
+});
+
+describe("RaffleCard after the draw", () => {
+  const drawn = (result: PortalRaffle["result"], extra: Partial<PortalRaffle> = {}) =>
+    render(raffle({ phase: "drawn", entered: true, result, ...extra }));
+
+  it("tells a winner where to collect and by when, with no Withdraw button", () => {
+    const html = drawn({ state: "won", deadline_at: "2026-12-07T23:30:00Z" }, { pickup: "Hoboken" });
+    expect(html).toContain("You won!");
+    expect(html).toContain("Hoboken");
+    expect(html).toContain("Dec 7, 2026");
+    expect(html).not.toContain("Withdraw my entry");
+  });
+
+  it("does not say won before they have been told", () => {
+    const html = drawn({ state: "waiting" });
+    expect(html).not.toContain("You won!");
+    expect(html).toContain("We&#x27;ll contact the winners soon");
+  });
+
+  it("covers every other result in plain words", () => {
+    expect(drawn({ state: "collected" })).toContain("You collected your prize");
+    expect(drawn({ state: "expired" })).toContain("The time to collect ended");
+    expect(drawn({ state: "declined" })).toContain("You passed on this spot");
+    expect(drawn({ state: "not_selected" })).toContain("You weren&#x27;t selected this time");
+  });
+
+  it("never shows a draw position", () => {
+    expect(drawn({ state: "waiting" }).toLowerCase()).not.toContain("position");
   });
 });

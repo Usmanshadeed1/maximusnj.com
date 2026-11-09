@@ -11,7 +11,8 @@ export default async function MemberRafflesPage() {
   if (access.status !== "member") redirect("/my/login");
   const raffles = await getPortalRaffles();
 
-  const mine = raffles.filter((r) => r.entered);
+  // A win goes to the top.
+  const mine = raffles.filter((r) => r.entered || r.result).sort((a, b) => Number(b.result?.state === "won") - Number(a.result?.state === "won"));
   const others = raffles.filter((r) => !r.entered && (r.phase === "open" || r.phase === "upcoming"));
 
   return (

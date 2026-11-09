@@ -1,13 +1,50 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, CheckCircle2, Clock, ImageIcon, MapPin, Trophy } from "lucide-react";
+import { CalendarClock, CheckCircle2, Clock, Frown, Hourglass, ImageIcon, MapPin, PartyPopper, PackageCheck, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form";
 import type { ActionState } from "@/lib/action-result";
 import { formatBusinessDateTime, formatCalendarDate } from "@/lib/format";
 import { enterRaffleAction, withdrawRaffleAction } from "@/server/actions/portal";
 import type { PortalRaffle } from "@/server/portal";
+
+/** The member's own result after the draw. Never a position, never anyone else. */
+function ResultPanel({ raffle }: { raffle: PortalRaffle }) {
+  const result = raffle.result;
+  if (!result) return null;
+  const pickup = raffle.pickup ?? raffle.store ?? "your Maximus store";
+
+  if (result.state === "won") {
+    return (
+      <div role="status" className="rounded-2xl bg-gradient-to-br from-brand-yellow to-amber-300 p-5 text-brand-navy-deep">
+        <p className="flex items-center gap-2 text-xl font-extrabold">
+          <PartyPopper aria-hidden className="size-6" /> You won!
+        </p>
+        <p className="mt-2 text-[15px] font-medium">
+          Come to <strong>{pickup}</strong> to pay and pick it up
+          {result.deadline_at ? <> by <strong>{formatBusinessDateTime(result.deadline_at)}</strong></> : ""}. Bring your member card.
+        </p>
+        <p className="mt-2 text-sm">If you can&apos;t make it, please tell the store so someone else can have your spot.</p>
+      </div>
+    );
+  }
+  const plain: Record<string, { icon: typeof Hourglass; text: string; tone: string }> = {
+    waiting: { icon: Hourglass, text: "The draw is done. We'll contact the winners soon. Keep an eye on this page.", tone: "bg-secondary/70" },
+    collected: { icon: PackageCheck, text: "You collected your prize. Enjoy!", tone: "bg-success/12 text-success" },
+    expired: { icon: Frown, text: "The time to collect ended, so your spot went to someone else.", tone: "bg-muted" },
+    declined: { icon: Frown, text: "You passed on this spot. Thanks for letting us know.", tone: "bg-muted" },
+    not_selected: { icon: Frown, text: "You weren't selected this time. Thanks for entering. See you at the next one!", tone: "bg-muted" },
+  };
+  const item = plain[result.state];
+  if (!item) return null;
+  const Icon = item.icon;
+  return (
+    <p role="status" className={`flex items-start gap-2.5 rounded-2xl px-4 py-3.5 text-sm font-medium ${item.tone}`}>
+      <Icon aria-hidden className="mt-0.5 size-5 shrink-0" /> {item.text}
+    </p>
+  );
+}
 
 /** One raffle: the release, when it closes, and the member's own Enter / Withdraw button. */
 export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: boolean }) {
@@ -77,7 +114,9 @@ export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: b
 
         <div className="mt-5">
           <FormMessage state={result} className="mb-3" />
-          {raffle.entered ? (
+          {raffle.result ? (
+            <ResultPanel raffle={raffle} />
+          ) : raffle.entered ? (
             open || upcoming ? (
               <Button variant="outline" size="lg" className="w-full" disabled={pending} onClick={() => run(withdrawRaffleAction)}>
                 {pending ? "Working…" : "Withdraw my entry"}

@@ -178,15 +178,17 @@ const STEPS = [
       "Create a Manager for Store A only (Employees, Create). Signed in as that Manager you can create a raffle for Store A but All stores is not offered, and Store B's raffles show no Edit or Open buttons.",
       "In the member page press Withdraw my entry, then enter again. In the staff app remove an entry with a reason, then check the Audit log."
     ] },
-  { n: 9, status: "not-started", name: "Raffles: draw, winners and pickup",
+  { n: 9, status: "ready-to-test", name: "Raffles: draw, winners and pickup",
     goal: "A fair draw gives a full ranked list, winners are notified, and claims are tracked.",
     tests: [
-      "Close a raffle with test entries and click Draw. You see the full list, #1 to the last name.",
-      "Try to draw again. It's blocked.",
-      "Click Notify. An email winner gets an email, and the portal shows \"You won\".",
-      "A raffle set to \"no notifications\" shows \"Call manually\".",
-      "Mark #1 as Expired and click \"Next in line\". The next person becomes a winner.",
-      "Mark a winner as Claimed and record the purchase. Their spend goes up."
+      "Get a raffle that has closed: create one that opens now and closes in a few minutes, open it, enter 4 or 5 test members in store, and wait until it closes.",
+      "Open that raffle, press Draw winners and confirm. You see the full ranked list from #1 to the last name, with the winners highlighted.",
+      "The Draw button is gone. The draw cannot be repeated.",
+      "Press Notify. A winner who chose the member page sees You won! on their Raffles tab. A winner who chose email is queued; the email goes out once the email sender is connected (Send emails again).",
+      "Make a raffle with no notification methods ticked. After its draw, Notify marks every winner Call manually. Press I phoned them for one: they are now told.",
+      "On winner #1 press Expired, then Next in line. The next person on the list becomes a winner. There is no new draw.",
+      "On another winner press Collected, enter an amount and save. Open that member: the purchase is in their history and their spend went up.",
+      "Mark every winner collected, expired or declined and press Finish raffle. Press Export CSV to download the list."
     ] },
   { n: 10, status: "not-started", name: "Reports and audit log",
     goal: "The Owner and Managers see clear dashboards and reports.",

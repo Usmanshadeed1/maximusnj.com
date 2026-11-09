@@ -364,6 +364,61 @@ export type RaffleEntryRow = {
   ended_at: string | null;
 };
 
+export type WinnerOutcome = "pending" | "notified" | "claimed" | "expired" | "declined";
+
+export type RaffleDrawResultRow = {
+  id: string;
+  raffle_id: string;
+  position: number;
+  entry_id: string;
+  customer_id: string;
+  is_winner: boolean;
+  outcome: WinnerOutcome;
+  notify_state: "notified" | "call_manually" | null;
+  notified_at: string | null;
+  notified_via: string | null;
+  claim_deadline_at: string | null;
+  claimed_at: string | null;
+  transaction_id: string | null;
+  handled_by: string | null;
+  handled_note: string | null;
+  created_at: string;
+};
+
+export type NotificationRow = {
+  id: string;
+  customer_id: string;
+  channel: "email" | "portal";
+  template: "raffle_win";
+  related_type: string;
+  related_id: string;
+  status: "queued" | "sent" | "failed";
+  attempts: number;
+  sent_at: string | null;
+  error: string | null;
+  created_at: string;
+};
+
+export type EmailQueueRow = {
+  notification_id: string;
+  email: string;
+  first_name: string;
+  release_name: string;
+  pickup_name: string | null;
+  deadline_at: string | null;
+  claim_hours: number;
+  attempts: number;
+};
+
+/** A member's own result in a drawn raffle. Never a position, never anyone else's. */
+export type PortalRaffleResult =
+  | { state: "waiting" }
+  | { state: "won"; deadline_at: string | null }
+  | { state: "collected" }
+  | { state: "expired" }
+  | { state: "declined" }
+  | { state: "not_selected" };
+
 /** What the member page gets for one raffle. Never any counts or other entrants. */
 export type PortalRaffleJson = {
   raffle_id: string;
@@ -375,10 +430,11 @@ export type PortalRaffleJson = {
   winners: number;
   opens_at: string;
   closes_at: string;
-  phase: "upcoming" | "open" | "closed" | "drawn" | "completed";
+  phase: "upcoming" | "open" | "closed" | "drawn" | "completed" | "cancelled" | "draft";
   entered: boolean;
   entered_other: boolean;
   removed: boolean;
+  result: PortalRaffleResult | null;
 };
 
 type RaffleSetupArgs = {
@@ -427,6 +483,8 @@ export type Database = {
       raffle_releases: ReadOnlyTable<RaffleReleaseRow>;
       raffles: ReadOnlyTable<RaffleRow>;
       raffle_entries: ReadOnlyTable<RaffleEntryRow>;
+      raffle_draw_results: ReadOnlyTable<RaffleDrawResultRow>;
+      notifications: ReadOnlyTable<NotificationRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -616,6 +674,23 @@ export type Database = {
       cancel_raffle: { Args: { p_id: string; p_reason: string }; Returns: RaffleRow };
       staff_enter_raffle: { Args: { p_raffle_id: string; p_customer_id: string }; Returns: RaffleEntryRow };
       remove_raffle_entry: { Args: { p_entry_id: string; p_reason: string }; Returns: RaffleEntryRow };
+      draw_raffle: { Args: { p_raffle_id: string }; Returns: { entrants: number; winners: number } };
+      notify_winners: {
+        Args: { p_raffle_id: string; p_count?: number | null };
+        Returns: { notified: number; call_manually: number; emails_queued: number };
+      };
+      raffle_email_queue: { Args: { p_raffle_id: string }; Returns: EmailQueueRow[] };
+      mark_notification: { Args: { p_id: string; p_status: "sent" | "failed"; p_error?: string | null }; Returns: boolean };
+      set_winner_outcome: {
+        Args: { p_result_id: string; p_outcome: WinnerOutcome; p_note?: string | null };
+        Returns: RaffleDrawResultRow;
+      };
+      next_in_line: { Args: { p_raffle_id: string }; Returns: RaffleDrawResultRow };
+      claim_raffle_win: {
+        Args: { p_result_id: string; p_location_id: string; p_amount_cents: number };
+        Returns: RaffleDrawResultRow;
+      };
+      complete_raffle: { Args: { p_raffle_id: string }; Returns: RaffleRow };
       portal_raffles: { Args: Record<string, never>; Returns: PortalRaffleJson[] | null };
       portal_enter_raffle: { Args: { p_raffle_id: string }; Returns: boolean };
       portal_withdraw_entry: { Args: { p_raffle_id: string }; Returns: boolean };
