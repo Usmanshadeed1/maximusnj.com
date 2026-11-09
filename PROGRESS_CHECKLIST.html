@@ -169,14 +169,14 @@ const STEPS = [
       "At the kiosk scan that member's card. A PIN pad appears and shows nothing about the member. A wrong PIN says how many tries are left; 5 wrong tries lock it for 5 minutes. The right PIN checks them in.",
       "On the member's staff profile (Online account and PIN) press Reset PIN. Scanning the card now checks in without a PIN until the member sets a new one."
     ] },
-  { n: 8, status: "not-started", name: "Raffles: setup and entry",
+  { n: 8, status: "ready-to-test", name: "Raffles: setup and entry",
     goal: "Admins create raffles, and members enter online or in store.",
     tests: [
-      "Create a release with a store raffle at each of two stores.",
-      "In the portal, enter Store A's raffle. Store B's is then blocked.",
-      "In store, entering the same member again is blocked.",
-      "As a Manager, you cannot create a company-wide raffle.",
-      "Withdraw an entry before closing, then enter again."
+      "Open Raffles in the menu, then New release. Give it a name, tick two stores, open it now and close it in a few days. Two draft raffles appear. Open each one with Open for entries.",
+      "(Needs the email sender for the member login.) In the member page, Raffles tab: enter Store A's raffle. Store B's now says you can only enter one.",
+      "In the staff app open Store A's raffle, search the same member and press Enter in raffle. It says they are already entered. Try Store B's raffle: it says they already entered another store's raffle.",
+      "Create a Manager for Store A only (Employees, Create). Signed in as that Manager you can create a raffle for Store A but All stores is not offered, and Store B's raffles show no Edit or Open buttons.",
+      "In the member page press Withdraw my entry, then enter again. In the staff app remove an entry with a reason, then check the Audit log."
     ] },
   { n: 9, status: "not-started", name: "Raffles: draw, winners and pickup",
     goal: "A fair draw gives a full ranked list, winners are notified, and claims are tracked.",

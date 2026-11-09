@@ -15,7 +15,7 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
   // Everyone works "at" a store. Owners may continue without one (e.g. to create the first store).
   if (!store && employee.role !== "owner") redirect("/staff/select-store");
 
-  const nav: NavKey[] = ["dashboard", "customers", "transactions", "kiosk"];
+  const nav: NavKey[] = ["dashboard", "customers", "transactions", "raffles", "kiosk"];
   if (canManageLocations(employee.role)) nav.push("stores");
   if (canViewEmployees(employee.role)) nav.push("employees");
   if (canManageTiers(employee.role)) nav.push("tiers", "monthly");

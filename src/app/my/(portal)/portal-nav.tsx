@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { History, Home, Settings } from "lucide-react";
+import { History, Home, Settings, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/my", label: "Home", icon: Home },
+  { href: "/my/raffles", label: "Raffles", icon: Ticket },
   { href: "/my/history", label: "History", icon: History },
   { href: "/my/settings", label: "Settings", icon: Settings },
 ] as const;
@@ -41,7 +42,7 @@ export function PortalNav({ variant }: { variant: "top" | "bottom" }) {
       aria-label="Member pages"
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(20_21_67/0.08)] backdrop-blur sm:hidden"
     >
-      <ul className="mx-auto grid max-w-3xl grid-cols-3">
+      <ul className="mx-auto grid max-w-3xl grid-cols-4">
         {ITEMS.map(({ href, label, icon: Icon }) => {
           const active = isActive(href);
           return (

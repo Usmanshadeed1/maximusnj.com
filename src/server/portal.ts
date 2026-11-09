@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { TierKey } from "@/lib/tier/engine";
-import type { NotifyPref, PortalOverviewJson } from "@/types/database";
+import type { NotifyPref, PortalOverviewJson, PortalRaffleJson, RafflePickupRule } from "@/types/database";
 import { type ProjectionView, toProjectionView, toRuleSetView } from "@/server/tiers";
 
 /** Everything the member pages show. Built from `portal_overview()`, which never includes notes or trades. */
@@ -106,4 +106,50 @@ export async function getSignUpStores(): Promise<{ id: string; name: string }[]>
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.rpc("portal_locations");
   return data ?? [];
+}
+
+/** One raffle as the member sees it: their own status only, never counts or other entrants. */
+export type PortalRaffle = {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  releaseDate: string | null;
+  scope: "store" | "company";
+  /** The raffle's store, or null for an all-stores raffle. */
+  store: string | null;
+  pickup: string | null;
+  pickupRule: RafflePickupRule;
+  winners: number;
+  opensAt: string;
+  closesAt: string;
+  phase: PortalRaffleJson["phase"];
+  entered: boolean;
+  /** They already entered a different store's raffle for the same release. */
+  enteredOther: boolean;
+  /** Staff removed their entry, so they can't enter again online. */
+  removed: boolean;
+};
+
+export async function getPortalRaffles(): Promise<PortalRaffle[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.rpc("portal_raffles");
+  return (data ?? []).map((r) => ({
+    id: r.raffle_id,
+    name: r.release.name,
+    description: r.release.description,
+    imageUrl: r.release.image_url,
+    releaseDate: r.release.release_date,
+    scope: r.scope,
+    store: r.store,
+    pickup: r.pickup,
+    pickupRule: r.pickup_rule,
+    winners: r.winners,
+    opensAt: r.opens_at,
+    closesAt: r.closes_at,
+    phase: r.phase,
+    entered: r.entered,
+    enteredOther: r.entered_other,
+    removed: r.removed,
+  }));
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { type ActionState, friendlyDbError, validationFailed } from "@/lib/action-result";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -126,4 +127,35 @@ export async function setNotifyPrefsAction(_prev: ActionState, formData: FormDat
   if (error) return { error: friendlyDbError(error) };
   revalidatePath("/my", "layout");
   return { ok: true, message: "Saved." };
+}
+
+/** What a member is told when an entry doesn't go through. Written to "you", never revealing other people. */
+const RAFFLE_MESSAGES: Record<string, string> = {
+  raffle_not_open: "This raffle isn't open for entries right now.",
+  already_entered: "You're already entered in this raffle.",
+  entered_other_raffle: "You've already entered another store's raffle for this release. You can only enter one.",
+  entry_removed: "Please ask a team member in store about your entry.",
+  customer_inactive: "Your membership is paused. Please visit a store.",
+  not_active: "You don't have an entry in this raffle.",
+};
+
+async function raffleCall(raffleId: unknown, rpc: "portal_enter_raffle" | "portal_withdraw_entry", done: string): Promise<ActionState> {
+  const access = await getMemberAccess();
+  if (access.status !== "member") return { error: "Please sign in again." };
+  const id = z.uuid().safeParse(raffleId);
+  if (!id.success) return { error: "That raffle is no longer available." };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc(rpc, { p_raffle_id: id.data });
+  revalidatePath("/my/raffles");
+  if (error) return { error: RAFFLE_MESSAGES[error.message] ?? "Something went wrong. Please try again." };
+  return { ok: true, message: done };
+}
+
+export async function enterRaffleAction(raffleId: string): Promise<ActionState> {
+  return raffleCall(raffleId, "portal_enter_raffle", "You're in! Good luck.");
+}
+
+export async function withdrawRaffleAction(raffleId: string): Promise<ActionState> {
+  return raffleCall(raffleId, "portal_withdraw_entry", "Your entry was withdrawn.");
 }

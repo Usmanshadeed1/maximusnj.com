@@ -106,3 +106,8 @@ export function canManageTiers(actor: EmployeeRole): boolean {
 export function canManagePortalAccess(actor: EmployeeRole): boolean {
   return actor === "owner" || actor === "manager";
 }
+
+/** Owner and Managers set raffles up (Managers only for their own stores, and never company-wide: the database enforces it, §10.2). */
+export function canCreateRaffles(actor: EmployeeRole): boolean {
+  return actor === "owner" || actor === "manager";
+}

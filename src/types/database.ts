@@ -310,6 +310,87 @@ export type PortalStatusJson = {
   pin_locked_until: string | null;
 };
 
+// ---- Raffles (Step 8) -----------------------------------------------------------------------------
+export type RaffleStatus = "draft" | "open" | "closed" | "drawn" | "completed" | "cancelled";
+export type RaffleScope = "store" | "company";
+export type RafflePickupRule = "raffle_store" | "home_store" | "specific_store";
+export type EntryChannel = "online" | "in_store";
+export type EntryStatus = "active" | "withdrawn" | "removed";
+export type RaffleChannel = "email" | "portal";
+
+export type RaffleReleaseRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  release_date: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RaffleRow = {
+  id: string;
+  release_id: string;
+  scope: RaffleScope;
+  location_id: string | null;
+  pickup_rule: RafflePickupRule;
+  pickup_location_id: string | null;
+  winner_count: number;
+  opens_at: string;
+  closes_at: string;
+  claim_deadline_hours: number;
+  allowed_channels: RaffleChannel[];
+  status: RaffleStatus;
+  cancelled_reason: string | null;
+  drawn_at: string | null;
+  drawn_by: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RaffleEntryRow = {
+  id: string;
+  raffle_id: string;
+  release_id: string;
+  customer_id: string;
+  channel: EntryChannel;
+  entered_by_employee_id: string | null;
+  status: EntryStatus;
+  removed_reason: string | null;
+  removed_by: string | null;
+  created_at: string;
+  ended_at: string | null;
+};
+
+/** What the member page gets for one raffle. Never any counts or other entrants. */
+export type PortalRaffleJson = {
+  raffle_id: string;
+  release: { name: string; description: string | null; image_url: string | null; release_date: string | null };
+  scope: RaffleScope;
+  store: string | null;
+  pickup: string | null;
+  pickup_rule: RafflePickupRule;
+  winners: number;
+  opens_at: string;
+  closes_at: string;
+  phase: "upcoming" | "open" | "closed" | "drawn" | "completed";
+  entered: boolean;
+  entered_other: boolean;
+  removed: boolean;
+};
+
+type RaffleSetupArgs = {
+  p_pickup_rule: RafflePickupRule;
+  p_pickup_location_id: string | null;
+  p_winner_count: number;
+  p_opens_at: string;
+  p_closes_at: string;
+  p_claim_hours: number;
+  p_channels: RaffleChannel[];
+};
+
 type CustomerFields = {
   p_first_name: string;
   p_last_name: string;
@@ -343,6 +424,9 @@ export type Database = {
       tier_overrides: ReadOnlyTable<TierOverrideRow>;
       monthly_tier_awards: ReadOnlyTable<MonthlyTierAwardRow>;
       tier_rollover_runs: ReadOnlyTable<RolloverRunRow>;
+      raffle_releases: ReadOnlyTable<RaffleReleaseRow>;
+      raffles: ReadOnlyTable<RaffleRow>;
+      raffle_entries: ReadOnlyTable<RaffleEntryRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -505,6 +589,36 @@ export type Database = {
       reset_customer_pin: { Args: { p_customer_id: string; p_reason?: string | null }; Returns: boolean };
       link_customer_login: { Args: { p_customer_id: string }; Returns: boolean };
       unlink_customer_login: { Args: { p_customer_id: string; p_reason: string }; Returns: boolean };
+      create_release_with_raffles: {
+        Args: RaffleSetupArgs & {
+          p_name: string;
+          p_description: string | null;
+          p_image_url: string | null;
+          p_release_date: string | null;
+          p_scope: RaffleScope;
+          p_location_ids: string[];
+        };
+        Returns: { release_id: string; raffle_ids: string[] };
+      };
+      add_raffles_to_release: {
+        Args: RaffleSetupArgs & { p_release_id: string; p_scope: RaffleScope; p_location_ids: string[] };
+        Returns: { release_id: string; raffle_ids: string[] };
+      };
+      update_release: {
+        Args: { p_id: string; p_name: string; p_description: string | null; p_image_url: string | null; p_release_date: string | null };
+        Returns: RaffleReleaseRow;
+      };
+      update_raffle: {
+        Args: RaffleSetupArgs & { p_id: string; p_scope: RaffleScope; p_location_id: string | null };
+        Returns: RaffleRow;
+      };
+      publish_raffle: { Args: { p_id: string }; Returns: RaffleRow };
+      cancel_raffle: { Args: { p_id: string; p_reason: string }; Returns: RaffleRow };
+      staff_enter_raffle: { Args: { p_raffle_id: string; p_customer_id: string }; Returns: RaffleEntryRow };
+      remove_raffle_entry: { Args: { p_entry_id: string; p_reason: string }; Returns: RaffleEntryRow };
+      portal_raffles: { Args: Record<string, never>; Returns: PortalRaffleJson[] | null };
+      portal_enter_raffle: { Args: { p_raffle_id: string }; Returns: boolean };
+      portal_withdraw_entry: { Args: { p_raffle_id: string }; Returns: boolean };
       rate_limit_hit: { Args: { p_key: string; p_max: number; p_window_seconds: number }; Returns: boolean };
       bootstrap_owner: {
         Args: { p_user_id: string; p_first_name: string; p_last_name: string; p_email: string };

@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 7 — Customer portal and member PIN (built; owner to test). Steps 5 and 6 are also built and waiting for the owner's approval.
+> **Current step:** Step 8 — Raffles: setup and entry (built; owner to test). Steps 5, 6 and 7 are also built and waiting for the owner's approval (Step 7's login test waits for the email sender).
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -588,6 +588,20 @@ During the current month, the staff app and the portal show:
 - **Staff tools:** the staff profile shows "Online account and PIN" (connected or not, how, when; PIN set / not set / locked). Staff only ever see whether a PIN exists.
 - **Not in Step 7:** the raffles part of the portal (Steps 8 and 9), SMS, and sending the real emails (the email sender is connected later).
 
+### 10.8 Step 8 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **Screens:** **Raffles** in the staff menu (everyone sees it). *New release* (Owner and Managers), a release page, a raffle page. The member page has a **Raffles** tab.
+- **Set up in one go:** a new release can create **one raffle for each store you tick**, all with the same settings, or **one raffle for all stores** (Owner only). More stores can be added later. A release is either one-per-store **or** company-wide, never both. A store has one raffle per release.
+- **Draft first:** new raffles are drafts and invisible to members. **Open for entries** publishes them. Members can enter only between the opening and closing times (New York time); a raffle that has not reached its opening time shows "Opens soon" with no button. Closed means the closing time has passed (the Step 9 draw happens after that).
+- **Changing a raffle:** a draft can change everything, including store / all-stores. Once open, the store cannot change, the opening time cannot move after it has passed, but the winners, closing time, claim hours, notification methods and pickup can. Closed raffles are locked. **Cancel** needs a reason and keeps existing entries for the record.
+- **Who works with which raffle:** the Owner everything. A Manager creates, edits, opens and cancels **store raffles at their own stores only**; never an all-stores raffle. Staff can enter a member in store and remove an entry, for raffles of their own stores and all-stores raffles. Staff see entries only for those raffles. Customers never see any entries or counts.
+- **One entry per member per release** (so only one store's raffle), enforced by the database, even for two taps at the same moment. **Withdrawing** frees the member to enter again before closing. Staff **removing** an entry needs a reason; the member then cannot put themselves back **online** (they can ask in store, and staff can add them again).
+- **Inactive members** cannot be entered, in store or online. Merging two members moves the duplicate's entry to the survivor (or removes it if the survivor is already in that release).
+- **Pickup:** a store raffle picks up at its own store. An all-stores raffle picks up at the winner's home store, or at one store the Owner chooses.
+- **Notification methods per raffle** (§10.5): Email and Member page; none ticked means staff phone the winners. Sending the messages is Step 9.
+- **Release picture:** a web address (https://…) for now; uploading pictures can come later.
+- **Not in Step 8:** the draw, ranked list, winners, notifications, claiming and CSV export (Step 9); "My results" in the member page (Step 9).
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -700,8 +714,8 @@ All tables have `id uuid` primary keys (except where noted), `created_at timesta
 | `monthly_tier_awards` | `customer_id`, `qualifying_month`, `awarded_month`, `tier_key`, `rule_set_id`, `net_spend_cents`, `qualifying_visits`, `visit_points_cents`, `score_cents`, `carry_in_cents`, `carry_out_cents`, `requirements_met`, `evidence` (the months used), `calc_version`, `run_id`, `source` (`scheduled`,`manual`,`test`,`recalculation`), `is_test`, `is_current`, `superseded_by`, `reason`, `calculated_by`, `calculated_at`; **unique (`customer_id`, `awarded_month`) where `is_current`**; never edited or deleted |
 | `tier_rollover_runs` | `awarded_month`, `source` (`scheduled`,`manual`,`test`), `status` (`running`,`succeeded`,`failed`), `customers_processed`, `customers_skipped`, `summary` (members per tier), `error`, `started_by`, `started_at`, `finished_at` |
 | `raffle_releases` | `name`, `description`, `image_url`, `release_date`, `created_by` |
-| `raffles` | `release_id`, `scope` (`store`,`company`), `location_id` (null when company), `pickup_rule`, `winner_count` > 0, `opens_at`, `closes_at`, `claim_deadline_hours`, `allowed_channels` text[], `status`, `drawn_at`, `drawn_by`; check `closes_at > opens_at` |
-| `raffle_entries` | `raffle_id`, `release_id`, `customer_id`, `channel` (`online`,`in_store`), `entered_by_employee_id`, `status` (`active`,`withdrawn`,`removed`), `removed_reason`; **unique (`release_id`, `customer_id`) where `status = 'active'`** |
+| `raffles` | `release_id`, `scope` (`store`,`company`), `location_id` (null when company), `pickup_rule` (`raffle_store`,`home_store`,`specific_store`), `pickup_location_id`, `winner_count` 1–10000, `opens_at`, `closes_at`, `claim_deadline_hours` 1–720, `allowed_channels` text[] (`email`,`portal`), `status` (`draft`,`open`,`closed`,`drawn`,`completed`,`cancelled`), `cancelled_reason`, `drawn_at`, `drawn_by`; check `closes_at > opens_at`; **unique per (`release_id`, `location_id`) and one company-wide per release** (cancelled ones excluded) |
+| `raffle_entries` | `raffle_id`, `release_id`, `customer_id`, `channel` (`online`,`in_store`), `entered_by_employee_id` (set for in-store entries), `status` (`active`,`withdrawn`,`removed`), `removed_reason`, `removed_by`, `ended_at`; **unique (`release_id`, `customer_id`) where `status = 'active'`**; (`raffle_id`, `release_id`) must match a raffle |
 | `raffle_draw_results` | `raffle_id`, `position`, `entry_id`, `customer_id`, `outcome` (`pending`,`notified`,`claimed`,`expired`,`declined`), `notified_at`, `notified_via`, `claim_deadline_at`, `claimed_at`, `transaction_id`, `handled_by`; **unique (`raffle_id`, `position`)**; rows are never deleted |
 | `notifications` | `customer_id`, `channel`, `template`, `related_type`, `related_id`, `status`, `sent_at`, `error` |
 | `app_settings` | `key` (primary key), `value` jsonb, `updated_by`, `updated_at` (for example `checkin_duplicate_window_minutes`, `kiosk_lock_minutes`) |
@@ -961,11 +975,11 @@ This lets the owner test monthly features without waiting a month.
 - Customers can't see other entrants.
 
 **Owner test:**
-1. Create a release with a store raffle at each of two stores.
-2. In the portal, enter Store A's raffle. Then try Store B's. It's blocked.
-3. In store, try entering the same member again. It's blocked.
-4. As a Manager, check you **cannot** create a company-wide raffle.
-5. Withdraw an entry before closing, then enter again.
+1. Open **Raffles** in the menu → **New release**. Give it a name, tick **two stores**, set it to open now and close in a few days, and create it. Two draft raffles appear. Open each with **Open for entries**.
+2. *(Needs the email sender for the member login.)* In the member page, **Raffles** tab: enter Store A's raffle. Store B's now says you can only enter one.
+3. In the staff app open Store A's raffle, search for the same member and try **Enter in raffle**. It says they are already entered. Try entering them in Store B's raffle: it says they already entered another store's raffle.
+4. Create a Manager for Store A only (Employees → Create). Signed in as that Manager, you can create a raffle for Store A but the **All stores** choice is not offered, and Store B's raffles show no Edit or Open buttons.
+5. In the member page, **Withdraw my entry**, then enter again. In the staff app, remove an entry with a reason and see it in the audit log.
 
 ---
 
@@ -1173,3 +1187,6 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 40 | PIN length | 6 to 12 numbers, set by the member on an on-screen number pad; stored only as a hash |
 | 41 | PIN at the kiosk | Asked after the card scan, only for members who have set a PIN; 5 wrong tries lock it for 5 minutes; nothing about the member is shown before it is right |
 | 42 | Forgotten PIN | The member sets a new one in the member page, or an Owner/Manager resets it on the profile |
+| 43 | Raffle set-up | A release creates one draft raffle per ticked store, or one all-stores raffle (Owner only); the Owner or Manager opens each when ready. Built in Step 8 |
+| 44 | Raffle edits | A draft changes freely; once open, the store and a passed opening time are fixed; closed raffles are locked; cancelling needs a reason |
+| 45 | Removed entries | Staff removing an entry needs a reason, and the member cannot re-enter online afterwards; staff can add them again in store |
