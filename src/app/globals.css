@@ -106,6 +106,28 @@
   }
 }
 
+/* PIN pad: a short shake when the PIN is wrong */
+@keyframes pin-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-8px);
+  }
+  40%,
+  80% {
+    transform: translateX(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="pin-shake"] {
+    animation: none !important;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--border);

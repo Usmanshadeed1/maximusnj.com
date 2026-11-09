@@ -9,6 +9,10 @@ export type KioskOutcome =
   | { kind: "not_found" }
   | { kind: "inactive" }
   | { kind: "invalid" }
+  /** The member has a PIN: ask for it. Nothing about the member is shown yet. */
+  | { kind: "pin_required" }
+  | { kind: "pin_incorrect"; attemptsLeft: number }
+  | { kind: "pin_locked"; minutesLeft: number }
   | { kind: "error" }
   | { kind: "session_expired" };
 
@@ -44,9 +48,23 @@ export function kioskScreen(outcome: KioskOutcome): KioskScreen {
       return { tone: "error", title: "Member not found", message: "That doesn't look like a member number. Please try again." };
     case "inactive":
       return { tone: "error", title: "Inactive member", message: "Please see a staff member at the counter." };
+    case "pin_locked":
+      return {
+        tone: "error",
+        title: "PIN locked",
+        message: `Too many wrong tries. Please wait ${outcome.minutesLeft} ${outcome.minutesLeft === 1 ? "minute" : "minutes"} or see a staff member.`,
+      };
+    case "pin_required":
+    case "pin_incorrect":
+      return { tone: "error", title: "PIN needed", message: "Please enter your PIN." };
     case "session_expired":
       return { tone: "error", title: "Kiosk signed out", message: "A staff member needs to sign in again." };
     case "error":
       return { tone: "error", title: "Connection problem", message: "Please try again in a moment." };
   }
+}
+
+/** The message under "Enter your PIN" after a wrong try. */
+export function wrongPinMessage(attemptsLeft: number): string {
+  return `That PIN isn't right. ${attemptsLeft} ${attemptsLeft === 1 ? "try" : "tries"} left.`;
 }

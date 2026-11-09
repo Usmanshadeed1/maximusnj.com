@@ -101,3 +101,8 @@ export function canBackdateAnyMonth(actor: EmployeeRole): boolean {
 export function canManageTiers(actor: EmployeeRole): boolean {
   return actor === "owner";
 }
+
+/** Owner and Managers link or unlink a member's online login and reset a forgotten PIN (§9.2). */
+export function canManagePortalAccess(actor: EmployeeRole): boolean {
+  return actor === "owner" || actor === "manager";
+}

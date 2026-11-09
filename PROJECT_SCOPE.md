@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Steps 5 and 6 — Tier engine & Tier Settings, and the Monthly tier update (testing together)
+> **Current step:** Step 7 — Customer portal and member PIN (built; owner to test). Steps 5 and 6 are also built and waiting for the owner's approval.
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -572,6 +572,22 @@ During the current month, the staff app and the portal show:
 - A customer can **never** read or change another customer's data or reach employee pages, store finances or privileged APIs.
 - Enrollment is **self-service** after staff create the member record, so nobody has to invite customers manually from the Supabase console.
 
+### 11.1 Step 7 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **Pages:** `/my` (home: card, tier, progress, benefits, recent activity), `/my/history`, `/my/settings` (PIN, raffle notifications, details), `/my/login`, `/my/join`, `/my/help` ("Please contact a store"). A "Member login" button sits at the top of the home page.
+- **Login:** the member types their email and then the **6-digit code** from the email (typed in a normal numeric box, so phones can fill it in from the email). The same wording is shown whether or not the email belongs to a member. ⚠️ The Supabase email templates must contain the code (`{{ .Token }}`); the default templates only contain a link. Set this when the email sender is connected.
+- **Limits:** a code can be requested 5 times an hour per email and 30 times an hour per network address; a code can be tried 10 times in 15 minutes per email and 40 per network address. Supabase adds its own limits.
+- **Linking (§9.2):** exactly one **active** member with the verified email links automatically; several members, an inactive member, or a member already linked to another login → "Please contact a store". Owner or Manager can link by hand (a shared email) or remove a link (staff profile → Online account and PIN). **Changing a member's email removes the old link** at once. **Merging** moves the link to the surviving member.
+- **Online sign-up:** needs a verified email that **no** member record uses (even a shared or inactive one), first and last name, a full mobile number, a home store and the 13+ box. Pressing the button twice makes only one member. The record is `created_via = 'online'`, Base tier, with a MAX number.
+- **What the member sees:** name, member number (text only; the barcode card comes in the Next release), current tier and its month, the tier they are on track for next month, progress, this month's spend / visit days / points, tier benefits text, the last 15 **purchases and refunds** (voided ones hidden) and last 10 **counted visits**. **Never shown:** trades, membership payments, adjustments, staff notes, employee names, who saved the tier rules. The data comes only from one database function (`portal_overview`) that looks at the caller's own linked record; members cannot read any table directly.
+- **Raffle notification choices:** Email, "In this member page", Phone call (Text message greyed out: Next release). Raffle results appear in the portal from Steps 8 and 9.
+- **Contact details** are read-only for members; changes go through staff (as §11 says for the MVP).
+- **PIN:** numbers only, **6 to 12** digits, set by the member on an on-screen number pad (typed twice). Only a salted hash is stored (bcrypt); the PIN is never shown, logged or put in the audit log, and not even the Owner can read it.
+- **PIN at the kiosk:** after the card is scanned, a member **who has set a PIN** is asked for it on a big number pad; nothing about the member (not even their first name) is shown before it is right. Members without a PIN check in as before. **5 wrong tries lock the PIN for 5 minutes** (settings `pin_max_attempts` and `pin_lock_minutes`); the counter is kept by the database, so it cannot be skipped from the browser. The PIN screen closes by itself after 30 seconds without touching. Locks, resets and changes are audit-logged.
+- **Forgotten PIN:** the member signs in to the member page (email code) and sets a new PIN, with no need for the old one. An Owner or Manager can also **Reset PIN** on the member's profile, which removes it; the member then checks in with the card alone until they set a new one.
+- **Staff tools:** the staff profile shows "Online account and PIN" (connected or not, how, when; PIN set / not set / locked). Staff only ever see whether a PIN exists.
+- **Not in Step 7:** the raffles part of the portal (Steps 8 and 9), SMS, and sending the real emails (the email sender is connected later).
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -673,7 +689,9 @@ All tables have `id uuid` primary keys (except where noted), `created_at timesta
 | `employees` | `id` = `auth.users.id`, `first_name`, `last_name`, `email` (unique), `role` enum(`owner`,`manager`,`staff`), `is_active` |
 | `employee_locations` | `employee_id`, `location_id`; primary key on both |
 | `customers` | `member_number` text **unique** (MAX###### via sequence and trigger; legacy values kept), `first_name`, `last_name`, `mobile_phone`, `no_mobile` bool, `email` citext, `email_verified_at`, `mobile_verified_at`, `home_location_id`, `status` enum(`active`,`inactive`), `is_under_13`, `age_13_confirmed`, `created_via` enum(`staff`,`online`,`migration`), `created_by`, `merged_into_id`, `raffle_notify_prefs` text[], `updated_at` |
-| `customer_auth_links` | `auth_user_id` **unique**, `customer_id` **unique**, `method` (`auto`,`staff`), `linked_by`, `linked_at` |
+| `customer_auth_links` | `auth_user_id` **unique**, `customer_id` **unique**, `linked_via` (`auto`,`online_signup`,`staff`), `linked_by`, `created_at` |
+| `customer_pins` | `customer_id` **primary key**, `pin_hash` (bcrypt), `failed_attempts`, `locked_until`, `set_at`, `updated_at`. No one can read it through the API |
+| `rate_limits` | `key` **primary key**, `window_start`, `hits`. Used by the server to limit login codes. No one can read it through the API |
 | `visits` | `customer_id`, `location_id`, `employee_id`, `device_id`, `checked_in_at`, `local_date` (New York date), `status` (`counted`,`duplicate`), `is_qualifying`; **unique (`customer_id`, `local_date`) where `is_qualifying`** |
 | `transactions` | `customer_id`, `location_id`, `employee_id`, `type` enum, `amount_cents` **> 0**, `adjustment_direction`, `counts_toward_tier`, `refund_of_transaction_id`, `raffle_id`, `occurred_at`, `local_month`, `note`, `voided_at`, `voided_by`, `void_reason` |
 | `tier_rule_sets` | `version` (unique), `effective_from_month`, `visit_value_cents`, `lookback_months` ≥ 1, `lookback_method` (`average`,`every_month`), `carry_over_enabled` (check: requires `lookback_months = 1`), `require_purchase`, `require_visit`, `created_by` |
@@ -901,7 +919,7 @@ This lets the owner test monthly features without waiting a month.
 
 **Build:** all of Section 5.2, 9.2 and 11, plus the **customer PIN ✅ (client remark)**:
 - The customer sets their own PIN in the portal: **numbers only, at least 6 digits**, entered on an **on-screen number pad** (large touch buttons).
-- Where it is used (planned: on the check-in kiosk, after the card scan, so nobody can use someone else's card) and how a forgotten PIN is reset are confirmed with the owner before building.
+- It is used on the check-in kiosk, after the card scan, so nobody can use someone else's card. A forgotten PIN is reset by the Owner or a Manager, or the member simply sets a new one in the portal (see §11.1).
 - Security: store only a **hash** of the PIN, limit wrong attempts and lock temporarily, and never show or log the PIN. The member number is still not a secret.
 
 **Automated tests:**
@@ -913,11 +931,15 @@ This lets the owner test monthly features without waiting a month.
 - Error messages never reveal whether someone is a member.
 
 **Owner test (on your phone):**
-1. Go to the `/my` link and enter a test customer's email. A code arrives by email. Enter it, and you see that customer's card, tier and progress.
-2. Check that trades and staff notes are **not** shown.
-3. Sign up as a brand-new customer online. A MAX number is issued.
-4. Try logging in with an email used by two customers. You see "Please contact a store".
-5. Set your raffle notification preference in Settings.
+0. *Before testing:* the login code is sent by Supabase's built-in email, which only reaches the addresses of your Supabase team and allows about 2 emails an hour. In Supabase → Authentication → Emails → Templates, edit **Magic Link** and **Confirm signup** so the email shows the code: add `{{ .Token }}` to the text. (The real sender is connected later and removes both limits.)
+1. Register a test member in the staff app with an email you can read. On your phone open the site, tap **Member login**, enter that email, then type the code from the email. You see the card, tier and progress.
+2. Record a purchase, a trade-in and a note for that member in the staff app. In the member page, **History** shows the purchase but **not** the trade-in, the note, adjustments or any employee name.
+3. Sign out. Log in with a brand-new email: you are asked to join. Fill in the form and tick the 13+ box. A MAX number is created and shown.
+4. Register two members in the staff app with the **same** email. Log in with that email: you see **Please contact a store**.
+5. In **Settings**, tick your raffle notification choices and save. Reload: they are still ticked.
+6. In **Settings**, press **Set my PIN**, tap 6 numbers on the number pad, confirm them, save.
+7. At the kiosk, scan that member's card. A PIN pad appears (and nothing about the member). A wrong PIN says how many tries are left; 5 wrong tries lock it for 5 minutes. The right PIN checks them in.
+8. On the member's staff profile (Online account and PIN), press **Reset PIN**. Scanning the card now checks in without a PIN until the member sets a new one.
 
 ---
 
@@ -1147,3 +1169,7 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 36 | Monthly update schedule | Checked every hour at :05 by the database, month taken from the New York clock; retried hourly until it succeeds; the Owner can also run it by hand. Built in Step 6 |
 | 37 | Test tools | A month-end simulator for the test site only; its results are marked Test and replaced by the real update. Off by default in the database |
 | 38 | Corrections | Recalculating replaces only results that differ, keeps the old ones, needs a reason, and never touches later months by itself |
+| 39 | Member login | Passwordless: email, then a 6-digit emailed code typed on the page. Links automatically only when exactly one active member uses the verified email; otherwise "Please contact a store". Built in Step 7 |
+| 40 | PIN length | 6 to 12 numbers, set by the member on an on-screen number pad; stored only as a hash |
+| 41 | PIN at the kiosk | Asked after the card scan, only for members who have set a PIN; 5 wrong tries lock it for 5 minutes; nothing about the member is shown before it is right |
+| 42 | Forgotten PIN | The member sets a new one in the member page, or an Owner/Manager resets it on the profile |

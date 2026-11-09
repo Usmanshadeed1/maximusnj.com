@@ -10,7 +10,7 @@ import {
   monthPoints,
   progressToNextTier,
 } from "@/lib/tier/engine";
-import type { TierOverrideRow, TierRuleSetJson, TierRulesOverview } from "@/types/database";
+import type { TierOverrideRow, TierProjectionJson, TierRuleSetJson, TierRulesOverview } from "@/types/database";
 
 // ---------------------------------------------------------------------------------------
 // Rules
@@ -28,7 +28,10 @@ export type RuleSetView = {
   createdBy: string | null;
 };
 
-export function toRuleSetView(json: TierRuleSetJson): RuleSetView {
+/** A rule set as JSON. The portal's copy leaves out who saved it. */
+export type RuleSetInput = Omit<TierRuleSetJson, "created_by"> & { created_by?: string | null };
+
+export function toRuleSetView(json: RuleSetInput): RuleSetView {
   const byKey = new Map(json.tiers.map((t) => [t.tier_key, t]));
   const threshold = (key: "silver" | "gold" | "diamond") => byKey.get(key)?.threshold_cents ?? 0;
   const tiers = TIER_ORDER.map((key) => ({
@@ -53,7 +56,7 @@ export function toRuleSetView(json: TierRuleSetJson): RuleSetView {
     tiers,
     names: Object.fromEntries(tiers.map((t) => [t.key, t.name])) as Record<TierKey, string>,
     createdAt: json.created_at,
-    createdBy: json.created_by,
+    createdBy: json.created_by ?? null,
   };
 }
 
@@ -161,6 +164,32 @@ export type TierView = {
   };
 };
 
+export type ProjectionView = TierView["projection"];
+
+/** Turns the database's projection JSON into what the screens use (shared by staff and the portal). */
+export function toProjectionView(json: Omit<TierProjectionJson, "rules"> & { rules: RuleSetInput }): ProjectionView {
+  const rules = toRuleSetView(json.rules);
+  const months = json.months.map((m) => ({ month: m.month, spendCents: m.spend_cents, visits: m.visits }));
+  const thisMonth = months[months.length - 1] ?? { spendCents: 0, visits: 0 };
+  return {
+    tier: json.projected.tier_key,
+    label: rules.names[json.projected.tier_key],
+    forMonth: json.next_month,
+    scoreCents: json.projected.score_cents,
+    months,
+    thisMonth: {
+      spendCents: thisMonth.spendCents,
+      visits: thisMonth.visits,
+      pointsCents: monthPoints(thisMonth, rules.rules.visitValueCents),
+    },
+    rules: rules.rules,
+    ruleVersion: rules.version,
+    names: rules.names,
+    thresholds: rules.tiers.map((t) => ({ key: t.key, name: t.name, thresholdCents: t.thresholdCents })),
+    progress: progressToNextTier(months, rules.rules, json.carry_in_cents),
+  };
+}
+
 export async function getCustomerTierView(customerId: string): Promise<TierView> {
   const supabase = await createSupabaseServerClient();
   const [current, projectionRes] = await Promise.all([
@@ -168,30 +197,5 @@ export async function getCustomerTierView(customerId: string): Promise<TierView>
     supabase.rpc("tier_projection", { p_customer_id: customerId }),
   ]);
   if (projectionRes.error || !projectionRes.data) throw new Error("Couldn't load the tier projection");
-
-  const json = projectionRes.data;
-  const rules = toRuleSetView(json.rules);
-  const months = json.months.map((m) => ({ month: m.month, spendCents: m.spend_cents, visits: m.visits }));
-  const thisMonth = months[months.length - 1] ?? { spendCents: 0, visits: 0 };
-
-  return {
-    current,
-    projection: {
-      tier: json.projected.tier_key,
-      label: rules.names[json.projected.tier_key],
-      forMonth: json.next_month,
-      scoreCents: json.projected.score_cents,
-      months,
-      thisMonth: {
-        spendCents: thisMonth.spendCents,
-        visits: thisMonth.visits,
-        pointsCents: monthPoints(thisMonth, rules.rules.visitValueCents),
-      },
-      rules: rules.rules,
-      ruleVersion: rules.version,
-      names: rules.names,
-      thresholds: rules.tiers.map((t) => ({ key: t.key, name: t.name, thresholdCents: t.thresholdCents })),
-      progress: progressToNextTier(months, rules.rules, json.carry_in_cents),
-    },
-  };
+  return { current, projection: toProjectionView(projectionRes.data) };
 }

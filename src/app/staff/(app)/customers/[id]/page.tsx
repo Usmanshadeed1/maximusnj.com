@@ -10,14 +10,22 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatBusinessDate, formatBusinessDateTime, formatMonthYear } from "@/lib/format";
 import { addMonths, nyMonthStartString } from "@/lib/timezone";
-import { canChangeCustomerStatus, canManageTiers, canMergeCustomers, canVoidTransactions } from "@/lib/permissions";
+import {
+  canChangeCustomerStatus,
+  canManagePortalAccess,
+  canManageTiers,
+  canMergeCustomers,
+  canVoidTransactions,
+} from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import { requireEmployee } from "@/server/auth";
 import { getCustomer, getVisitSummary } from "@/server/customers";
+import { getPortalStatus } from "@/server/portal-staff";
 import { getAwardHistory, isTestToolsEnabled } from "@/server/tier-awards";
 import { getCustomerTierView } from "@/server/tiers";
 import { getSpend, getTransactions } from "@/server/transactions";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
+import { PortalAccessCard } from "./portal-access-card";
 import { SpendingCard, TransactionsCard } from "./spending-cards";
 import { MonthlyTiersCard } from "./monthly-tiers-card";
 import { TierCard } from "./tier-card";
@@ -29,7 +37,7 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const [customer, visits, spend, transactions, tierView, awards, testTools] = await Promise.all([
+  const [customer, visits, spend, transactions, tierView, awards, testTools, portalStatus] = await Promise.all([
     getCustomer(id),
     getVisitSummary(id),
     getSpend(id),
@@ -37,6 +45,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
     getCustomerTierView(id),
     getAwardHistory(id),
     canManageTiers(employee.role) ? isTestToolsEnabled() : Promise.resolve(false),
+    getPortalStatus(id),
   ]);
   if (!customer) notFound();
 
@@ -166,6 +175,16 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
             canVoid={canVoidTransactions(employee.role)}
             canRecord={!isMerged && customer.status === "active"}
           />
+
+          {!isMerged && portalStatus && (
+            <PortalAccessCard
+              status={portalStatus}
+              customerId={customer.id}
+              name={name}
+              hasEmail={Boolean(customer.email)}
+              canManage={canManagePortalAccess(employee.role)}
+            />
+          )}
 
           <Card className="p-5 sm:p-6">
             <h2 className="mb-4 text-base font-bold text-brand-navy-deep">Details</h2>

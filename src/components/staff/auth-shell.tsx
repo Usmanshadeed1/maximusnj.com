@@ -6,10 +6,13 @@ import { Card } from "@/components/ui/card";
 export function AuthShell({
   title,
   description,
+  eyebrow = "Staff",
   children,
 }: {
   title: string;
   description?: string;
+  /** Small label above the title: "Staff" or "Members". */
+  eyebrow?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -27,7 +30,7 @@ export function AuthShell({
           <Logo priority className="w-44" />
         </div>
         <Card className="p-6 sm:p-8">
-          <p className="text-xs font-semibold tracking-[0.18em] text-brand-blue uppercase">Staff</p>
+          <p className="text-xs font-semibold tracking-[0.18em] text-brand-blue uppercase">{eyebrow}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-brand-navy-deep">{title}</h1>
           {description && <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>}
           <div className="mt-6">{children}</div>

@@ -25,7 +25,11 @@ export async function startKioskAction(): Promise<void> {
 }
 
 /** Records one scan. Returns only what the kiosk may show. */
-export async function checkInAction(rawMemberNumber: string, deviceId: string | null): Promise<KioskOutcome> {
+export async function checkInAction(
+  rawMemberNumber: string,
+  deviceId: string | null,
+  pin: string | null = null,
+): Promise<KioskOutcome> {
   const employee = await getCurrentEmployee();
   if (!employee) return { kind: "session_expired" };
   const store = await getKioskStore();
@@ -39,6 +43,7 @@ export async function checkInAction(rawMemberNumber: string, deviceId: string | 
     p_member_number: memberNumber,
     p_location_id: store.id,
     p_device_id: deviceId?.slice(0, 64) ?? null,
+    p_pin: pin && /^[0-9]{1,12}$/.test(pin) ? pin : null,
   });
   if (error || !data) return { kind: "error" };
   const labels = await getTierLabels();
@@ -58,6 +63,12 @@ export async function checkInAction(rawMemberNumber: string, deviceId: string | 
       return { kind: "not_found" };
     case "inactive":
       return { kind: "inactive" };
+    case "pin_required":
+      return { kind: "pin_required" };
+    case "pin_incorrect":
+      return { kind: "pin_incorrect", attemptsLeft: data.attempts_left };
+    case "pin_locked":
+      return { kind: "pin_locked", minutesLeft: data.minutes_left };
   }
 }
 

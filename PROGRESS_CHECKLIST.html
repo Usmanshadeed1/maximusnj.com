@@ -156,14 +156,18 @@ const STEPS = [
       "Open the Audit log. The month-end test and the recalculation are listed.",
       "Within about an hour, an Automatic update for this month appears in Recent updates by itself."
     ] },
-  { n: 7, status: "not-started", name: "Customer portal",
-    goal: "Customers log in with their email and see their tier, progress and history.",
+  { n: 7, status: "ready-to-test", name: "Customer portal",
+    goal: "Customers log in with their email, see their tier, progress and history, and set their own PIN.",
     tests: [
-      "On your phone, go to /my and enter a test customer's email. Enter the emailed code. You see their card, tier and progress.",
-      "Trades and staff notes are NOT shown.",
-      "Sign up as a brand-new customer online. A MAX number is issued.",
-      "Log in with an email shared by two customers. You see \"Please contact a store\".",
-      "Set your raffle notification preference in Settings."
+      "Before testing: in Supabase, Authentication, Emails, Templates, edit Magic Link and Confirm signup so the email shows the code (add {{ .Token }}). Until the real email sender is connected, codes only reach your Supabase team's addresses (about 2 an hour).",
+      "Register a test member in the staff app with an email you can read. On your phone open the site, tap Member login, enter that email and type the code. You see their card, tier and progress.",
+      "Record a purchase, a trade-in and a note for that member. In the member page, History shows the purchase but NOT the trade-in, the note, adjustments or any employee name.",
+      "Sign out and log in with a brand-new email. You are asked to join. Fill the form and tick 13 or older. A MAX number is created and shown.",
+      "Register two members with the same email. Logging in with it shows Please contact a store.",
+      "In Settings tick your raffle notification choices and save. Reload: they are still ticked.",
+      "In Settings press Set my PIN, tap 6 numbers on the number pad, confirm and save.",
+      "At the kiosk scan that member's card. A PIN pad appears and shows nothing about the member. A wrong PIN says how many tries are left; 5 wrong tries lock it for 5 minutes. The right PIN checks them in.",
+      "On the member's staff profile (Online account and PIN) press Reset PIN. Scanning the card now checks in without a PIN until the member sets a new one."
     ] },
   { n: 8, status: "not-started", name: "Raffles: setup and entry",
     goal: "Admins create raffles, and members enter online or in store.",

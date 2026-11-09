@@ -64,6 +64,18 @@ const DB_MESSAGES: Record<string, string> = {
   has_active_refunds: "This purchase has refunds. Void the refunds first.",
   transaction_immutable: "Transactions can't be edited or deleted. Use a void or a reversing entry.",
   name_mismatch: "The name you typed doesn't match the store name.",
+  pin_invalid: "A PIN must be 6 to 12 numbers.",
+  no_pin: "This member hasn't set a PIN.",
+  no_email: "This member has no email address on file.",
+  already_linked: "This member already has an online login.",
+  no_login_found:
+    "No verified online login uses this email yet. Ask the member to sign in at the member page first, then try again.",
+  login_already_linked: "That online login is already linked to another member.",
+  not_linked: "This member has no online login to remove.",
+  invalid_preference: "Choose from the options shown.",
+  age_required: "Please confirm you are 13 or older.",
+  signup_not_allowed: "Please visit a store to finish setting up your account.",
+  email_not_verified: "Please verify your email first.",
   store_has_history:
     "This store has customers, visits or staff, so it can't be deleted without losing their history. Deactivate it instead.",
 };

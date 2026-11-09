@@ -9,7 +9,7 @@ const KIOSK_COOKIE = "mx_kiosk";
 const PUBLIC_STAFF_PATHS = ["/staff/login", "/staff/forgot-password"];
 
 /**
- * Runs before /staff and /auth requests:
+ * Runs before /staff, /auth and /my (member portal) requests:
  *  1. refreshes the Supabase session cookies, and
  *  2. sends signed-out visitors to the login page (an optimistic check only —
  *     every page and action still verifies the user and role on the server).
@@ -58,5 +58,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/staff/:path*", "/auth/:path*"],
+  matcher: ["/staff/:path*", "/auth/:path*", "/my/:path*"],
 };

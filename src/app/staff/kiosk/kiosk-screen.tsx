@@ -7,16 +7,22 @@ import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Button } from "@/components/ui/button";
 import { BUSINESS_TIME_ZONE } from "@/lib/format";
-import { type KioskOutcome, cleanMemberNumber, kioskScreen } from "@/lib/kiosk";
+import { type KioskOutcome, cleanMemberNumber, kioskScreen, wrongPinMessage } from "@/lib/kiosk";
 import { cn } from "@/lib/utils";
 import { checkInAction } from "@/server/actions/kiosk";
+import { KioskPin } from "./kiosk-pin";
 import { StaffCredentialsForm } from "./staff-credentials-form";
 
 const RESULT_MS = 3000;
 const DEVICE_KEY = "mx_kiosk_device_id";
 const TIERS: TierKey[] = ["base", "silver", "gold", "diamond"];
 
-type Phase = { type: "ready" } | { type: "checking" } | { type: "result"; outcome: KioskOutcome };
+type Phase =
+  | { type: "ready" }
+  | { type: "checking" }
+  /** The member has a PIN: waiting for it. `attempt` counts wrong tries (so the pad can shake). */
+  | { type: "pin"; memberNumber: string; error: string | null; attempt: number }
+  | { type: "result"; outcome: KioskOutcome };
 
 /** Stable id for this tablet (attached to every visit). Falls back gracefully if storage is blocked. */
 function readDeviceId(): string | null {
@@ -87,19 +93,33 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
     return () => clearInterval(timer);
   }, [interactive]);
 
-  const submit = async () => {
-    const memberNumber = cleanMemberNumber(value);
-    if (!memberNumber || phase.type !== "ready") return;
+  /** Sends the scan (and the PIN, once asked for) and shows what came back. */
+  const run = async (memberNumber: string, pin: string | null, attempt: number) => {
     setPhase({ type: "checking" });
 
     let outcome: KioskOutcome;
     try {
-      outcome = await checkInAction(memberNumber, deviceId.current);
+      outcome = await checkInAction(memberNumber, deviceId.current, pin);
     } catch {
       outcome = { kind: "error" };
     }
+
+    if (outcome.kind === "pin_required") {
+      setPhase({ type: "pin", memberNumber, error: null, attempt });
+      return;
+    }
+    if (outcome.kind === "pin_incorrect") {
+      setPhase({ type: "pin", memberNumber, error: wrongPinMessage(outcome.attemptsLeft), attempt: attempt + 1 });
+      return;
+    }
     setPhase({ type: "result", outcome });
     if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+  };
+
+  const submit = async () => {
+    const memberNumber = cleanMemberNumber(value);
+    if (!memberNumber || phase.type !== "ready") return;
+    await run(memberNumber, null, 0);
   };
 
   return (
@@ -192,6 +212,17 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
           <Loader2 aria-hidden className="size-16 animate-spin text-brand-yellow" />
           <span className="sr-only">Checking in…</span>
         </div>
+      )}
+
+      {/* PIN (only for members who have set one) */}
+      {phase.type === "pin" && (
+        <KioskPin
+          key={phase.memberNumber}
+          error={phase.error}
+          attempt={phase.attempt}
+          onSubmit={(pin) => void run(phase.memberNumber, pin, phase.attempt)}
+          onCancel={backToReady}
+        />
       )}
 
       {/* Result */}

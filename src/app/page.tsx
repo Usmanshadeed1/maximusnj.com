@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogIn, ScanLine, Ticket, TrendingUp } from "lucide-react";
+import { LogIn, ScanLine, Ticket, TrendingUp, UserRound } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,14 +43,22 @@ export default function HomePage() {
 
         {/* Top bar: logo left, sign-in right */}
         <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:pt-8">
-          <Logo priority className="w-32 sm:w-44" />
-          <div className="flex items-center gap-3">
+          <Logo priority className="w-28 sm:w-44" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/my/login"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-brand-yellow px-4 text-sm font-semibold text-brand-navy-deep transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+            >
+              <UserRound aria-hidden className="size-4" />
+              Member login
+            </Link>
             <Link
               href="/staff/login"
               className="inline-flex h-11 items-center gap-2 rounded-md border border-white/30 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-brand-yellow hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             >
               <LogIn aria-hidden className="size-4" />
-              Log in
+              <span className="sm:hidden">Staff</span>
+              <span className="hidden sm:inline">Staff log in</span>
             </Link>
           </div>
         </header>

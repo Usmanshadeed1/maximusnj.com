@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanMemberNumber, isPlausibleMemberNumber, kioskScreen } from "./kiosk";
+import { cleanMemberNumber, isPlausibleMemberNumber, kioskScreen, wrongPinMessage } from "./kiosk";
 
 describe("cleanMemberNumber", () => {
   it("strips scanner whitespace and upper-cases", () => {
@@ -32,5 +32,21 @@ describe("kioskScreen", () => {
       title: "Already checked in",
     });
     expect(kioskScreen({ kind: "error" }).tone).toBe("error");
+  });
+});
+
+describe("kiosk PIN wording", () => {
+  it("shows a locked PIN as a red screen that says how long to wait", () => {
+    expect(kioskScreen({ kind: "pin_locked", minutesLeft: 5 })).toMatchObject({
+      tone: "error",
+      title: "PIN locked",
+      message: expect.stringContaining("5 minutes"),
+    });
+    expect(kioskScreen({ kind: "pin_locked", minutesLeft: 1 }).message).toContain("1 minute ");
+  });
+
+  it("counts the tries left after a wrong PIN", () => {
+    expect(wrongPinMessage(4)).toBe("That PIN isn't right. 4 tries left.");
+    expect(wrongPinMessage(1)).toBe("That PIN isn't right. 1 try left.");
   });
 });

@@ -271,7 +271,44 @@ export type CheckInResult =
   | { result: "checked_in"; first_name: string; tier: string; qualifying: boolean }
   | { result: "already_checked_in"; first_name: string; tier: string }
   | { result: "not_found" }
-  | { result: "inactive" };
+  | { result: "inactive" }
+  | { result: "pin_required" }
+  | { result: "pin_incorrect"; attempts_left: number }
+  | { result: "pin_locked"; minutes_left: number };
+
+// ---- Customer portal (Step 7) -------------------------------------------------------------------
+export type LinkState = "linked" | "unverified" | "needs_signup" | "contact_store";
+export type NotifyPref = "email" | "portal" | "phone";
+
+/** What the portal is allowed to know about the signed-in member (no notes, trades or employee names). */
+export type PortalOverviewJson = {
+  customer: {
+    member_number: string;
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    mobile_phone: string | null;
+    status: CustomerStatus;
+    home_store: string | null;
+    member_since: string;
+    raffle_notify_prefs: NotifyPref[];
+  };
+  has_pin: boolean;
+  month: string;
+  tier: { key: TierKey; source: "override" | "award" | "start"; qualifying_month: string | null };
+  rules: Omit<TierRuleSetJson, "created_by">;
+  projection: Omit<TierProjectionJson, "rules"> & { rules: Omit<TierRuleSetJson, "created_by"> };
+  visits: { at: string; store: string; counts: boolean }[];
+  purchases: { at: string; store: string; type: "purchase" | "refund"; amount_cents: number }[];
+};
+
+export type PortalStatusJson = {
+  linked: boolean;
+  linked_at: string | null;
+  linked_via: "auto" | "online_signup" | "staff" | null;
+  has_pin: boolean;
+  pin_locked_until: string | null;
+};
 
 type CustomerFields = {
   p_first_name: string;
@@ -452,9 +489,23 @@ export type Database = {
         Returns: RefundablePurchase[];
       };
       check_in: {
-        Args: { p_member_number: string; p_location_id: string; p_device_id?: string | null };
+        Args: { p_member_number: string; p_location_id: string; p_device_id?: string | null; p_pin?: string | null };
         Returns: CheckInResult;
       };
+      portal_link_account: { Args: Record<string, never>; Returns: { state: LinkState } };
+      portal_locations: { Args: Record<string, never>; Returns: { id: string; name: string }[] };
+      portal_sign_up: {
+        Args: { p_first_name: string; p_last_name: string; p_mobile: string; p_home_location_id: string; p_age_13: boolean };
+        Returns: { state: "linked"; member_number?: string };
+      };
+      portal_overview: { Args: Record<string, never>; Returns: PortalOverviewJson | null };
+      portal_set_notify_prefs: { Args: { p_prefs: string[] }; Returns: string[] };
+      portal_set_pin: { Args: { p_pin: string }; Returns: boolean };
+      customer_portal_status: { Args: { p_customer_id: string }; Returns: PortalStatusJson };
+      reset_customer_pin: { Args: { p_customer_id: string; p_reason?: string | null }; Returns: boolean };
+      link_customer_login: { Args: { p_customer_id: string }; Returns: boolean };
+      unlink_customer_login: { Args: { p_customer_id: string; p_reason: string }; Returns: boolean };
+      rate_limit_hit: { Args: { p_key: string; p_max: number; p_window_seconds: number }; Returns: boolean };
       bootstrap_owner: {
         Args: { p_user_id: string; p_first_name: string; p_last_name: string; p_email: string };
         Returns: EmployeeRow;
