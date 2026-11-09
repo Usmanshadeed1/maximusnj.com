@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nyDateString, nyMonthStartString, nyTimeString, nyWallTimeToInstant } from "./timezone";
+import { addMonths, nyDateString, nyMonthStartString, nyTimeString, nyWallTimeToInstant } from "./timezone";
 
 describe("nyWallTimeToInstant", () => {
   it("converts summer time (EDT, UTC−4)", () => {
@@ -44,5 +44,19 @@ describe("New York date helpers", () => {
     const instant = nyWallTimeToInstant("2026-08-15", "09:45");
     expect(nyDateString(instant)).toBe("2026-08-15");
     expect(nyTimeString(instant)).toBe("09:45");
+  });
+});
+
+describe("addMonths", () => {
+  it("moves forward and back across year ends", () => {
+    expect(addMonths("2026-11-01", 1)).toBe("2026-12-01");
+    expect(addMonths("2026-11-01", 2)).toBe("2027-01-01");
+    expect(addMonths("2026-01-01", -1)).toBe("2025-12-01");
+    expect(addMonths("2026-06-01", 0)).toBe("2026-06-01");
+    expect(addMonths("2026-11-01", 25)).toBe("2028-12-01");
+  });
+
+  it("rejects dates that are not the first of a month", () => {
+    expect(() => addMonths("2026-11-15", 1)).toThrow(RangeError);
   });
 });

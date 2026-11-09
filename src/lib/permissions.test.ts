@@ -10,6 +10,7 @@ import {
   canMergeCustomers,
   canEditStoresOf,
   canInvite,
+  canManageTiers,
   canManageLocations,
   canViewAuditLog,
   canViewEmployees,
@@ -85,6 +86,14 @@ describe("transactions", () => {
     expect(canBackdateAnyMonth("owner")).toBe(true);
     expect(canBackdateAnyMonth("manager")).toBe(false);
     expect(canBackdateAnyMonth("staff")).toBe(false);
+  });
+});
+
+describe("tiers", () => {
+  it("only the Owner manages tier settings and overrides", () => {
+    expect(canManageTiers("owner")).toBe(true);
+    expect(canManageTiers("manager")).toBe(false);
+    expect(canManageTiers("staff")).toBe(false);
   });
 });
 

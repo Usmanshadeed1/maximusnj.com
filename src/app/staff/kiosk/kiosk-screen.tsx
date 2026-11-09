@@ -261,7 +261,12 @@ function ResultScreen({ outcome, onDismiss }: { outcome: KioskOutcome; onDismiss
       )}
       <h2 className="mt-6 text-5xl font-extrabold tracking-tight text-balance sm:text-7xl">{screen.title}</h2>
       {success && tier && TIERS.includes(tier) && (
-        <TierBadge tier={tier} tone="dark" className="mt-6 px-5 py-2 text-base sm:text-lg" />
+        <TierBadge
+          tier={tier}
+          label={"tierLabel" in outcome ? outcome.tierLabel : undefined}
+          tone="dark"
+          className="mt-6 px-5 py-2 text-base sm:text-lg"
+        />
       )}
       <p className="mt-6 max-w-2xl text-2xl text-white/90 sm:text-3xl">{screen.message}</p>
 

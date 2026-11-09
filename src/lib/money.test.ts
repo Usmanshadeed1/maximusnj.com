@@ -48,6 +48,19 @@ describe("parseMoneyToCents", () => {
   });
 });
 
+describe("parseMoneyToCents with allowZero", () => {
+  it("accepts $0 only when asked to", () => {
+    expect(parseMoneyToCents("0", { allowZero: true })).toEqual({ ok: true, cents: 0 });
+    expect(parseMoneyToCents("0.00", { allowZero: true })).toEqual({ ok: true, cents: 0 });
+    expect(parseMoneyToCents("0").ok).toBe(false);
+  });
+
+  it("still rejects negatives and text", () => {
+    expect(parseMoneyToCents("-1", { allowZero: true }).ok).toBe(false);
+    expect(parseMoneyToCents("abc", { allowZero: true }).ok).toBe(false);
+  });
+});
+
 describe("centsToInput", () => {
   it("formats cents for an input box", () => {
     expect(centsToInput(1999)).toBe("19.99");

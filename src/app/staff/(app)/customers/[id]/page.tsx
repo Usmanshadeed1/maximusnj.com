@@ -8,14 +8,17 @@ import { TierBadge } from "@/components/tier-badge";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatBusinessDate, formatBusinessDateTime } from "@/lib/format";
-import { canChangeCustomerStatus, canMergeCustomers, canVoidTransactions } from "@/lib/permissions";
+import { formatBusinessDate, formatBusinessDateTime, formatMonthYear } from "@/lib/format";
+import { addMonths, nyMonthStartString } from "@/lib/timezone";
+import { canChangeCustomerStatus, canManageTiers, canMergeCustomers, canVoidTransactions } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import { requireEmployee } from "@/server/auth";
 import { getCustomer, getVisitSummary } from "@/server/customers";
+import { getCustomerTierView } from "@/server/tiers";
 import { getSpend, getTransactions } from "@/server/transactions";
 import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
 import { SpendingCard, TransactionsCard } from "./spending-cards";
+import { TierCard } from "./tier-card";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -24,17 +27,25 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const [customer, visits, spend, transactions] = await Promise.all([
+  const [customer, visits, spend, transactions, tierView] = await Promise.all([
     getCustomer(id),
     getVisitSummary(id),
     getSpend(id),
     getTransactions(id),
+    getCustomerTierView(id),
   ]);
   if (!customer) notFound();
 
   const name = `${customer.first_name} ${customer.last_name}`;
   const isMerged = Boolean(customer.merged_into_id);
   const justRegistered = flags.new === "1";
+
+  // The months an Owner can end a tier override at: this month and the next 11.
+  const thisMonth = nyMonthStartString(new Date());
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const value = addMonths(thisMonth, i);
+    return { value, label: `${formatMonthYear(value)}${i === 0 ? " (this month)" : ""}` };
+  });
 
   return (
     <>
@@ -95,7 +106,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
                   {customer.member_number}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <TierBadge tier="base" />
+                  <TierBadge tier={tierView.current.key} label={tierView.current.label} />
                   <CustomerBadges customer={customer} />
                 </div>
               </div>
@@ -111,6 +122,16 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
               )}
             </div>
           </Card>
+
+          {!isMerged && (
+            <TierCard
+              view={tierView}
+              customerId={customer.id}
+              customerName={name}
+              canManage={canManageTiers(employee.role)}
+              monthOptions={monthOptions}
+            />
+          )}
 
           <SpendingCard spend={spend} />
 
@@ -144,7 +165,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
                 )}
               </Detail>
               <Detail label="Home store">{customer.homeStoreName}</Detail>
-              <Detail label="Current tier">Base</Detail>
+              <Detail label="Current tier">{tierView.current.label}</Detail>
               <Detail label="Member since">{formatBusinessDate(customer.created_at)}</Detail>
               <Detail label="Registered">
                 {SOURCE_LABELS[customer.created_via]}
@@ -215,7 +236,12 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
         </div>
 
         <aside className="flex flex-col gap-3">
-          <MemberCard name={name} memberNumber={customer.member_number} className="mx-auto max-w-sm lg:max-w-none" />
+          <MemberCard
+            name={name}
+            memberNumber={customer.member_number}
+            tier={{ key: tierView.current.key, label: tierView.current.label }}
+            className="mx-auto max-w-sm lg:max-w-none"
+          />
           {!isMerged && (
             <Link href={`/staff/print/card/${customer.id}`} className={buttonVariants({ variant: "secondary" })}>
               <Printer aria-hidden /> Print this card

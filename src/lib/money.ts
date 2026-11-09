@@ -8,7 +8,7 @@ export const MAX_AMOUNT_CENTS = 100_000_000;
 
 export type MoneyParseResult = { ok: true; cents: number } | { ok: false; error: string };
 
-export function parseMoneyToCents(input: string): MoneyParseResult {
+export function parseMoneyToCents(input: string, options: { allowZero?: boolean } = {}): MoneyParseResult {
   const text = input.trim();
   if (text === "") return { ok: false, error: "Enter an amount." };
   if (text.startsWith("-") || text.startsWith("(")) {
@@ -29,7 +29,7 @@ export function parseMoneyToCents(input: string): MoneyParseResult {
   if (!Number.isSafeInteger(total) || total > MAX_AMOUNT_CENTS) {
     return { ok: false, error: "That amount is too large. Check for a typing mistake." };
   }
-  if (total < 1) return { ok: false, error: "Enter an amount greater than $0.00." };
+  if (total < 1 && !options.allowZero) return { ok: false, error: "Enter an amount greater than $0.00." };
   return { ok: true, cents: total };
 }
 

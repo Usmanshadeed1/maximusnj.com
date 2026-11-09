@@ -7,7 +7,7 @@ Version 2.0 · 2026-11-06
 
 > ### 📍 CURRENT STATUS
 > **Current step:** Step 5 — Tier engine and Tier Settings
-> **Status:** Not started — task list shared with the owner, waiting for go-ahead
+> **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
 >
@@ -352,6 +352,26 @@ During the current month, the staff app and the portal show:
 - A **pure TypeScript function** (`calculateTier(inputs, ruleSet) → result`) with 100% unit-test coverage. The same logic is mirrored in a **Postgres function** that the monthly job uses. A test must prove the two give identical results on the same fixtures.
 - Inputs and outputs are in integer cents.
 
+### 7.7 Step 5 decisions where this section was silent 🔧 (change with the owner's OK)
+
+- **How the requirements are checked:**
+  - *Average:* over the whole look-back window (total spend above $0, and at least one qualifying visit).
+  - *Every month:* in each month of the window.
+  - *Carry-over:* applied to the month just ended, but **not when credit is carried in** (that credit was earned through real purchases). This is what makes "$50,000 = 10 months of the top tier" true even though the member shops in none of those months.
+  - A month that fails the requirements earns **no new carry credit** (visit-only points can't be banked), but a negative balance from refunds is never forgotten.
+- **The average rounds down** (to the cent). The weakest month decides "Every month".
+- **Projection (§7.5):** looks at the last N months **ending with the current month**, using the rules that apply **next** month. That is exactly what the monthly job in Step 6 will calculate on the 1st.
+- **Until Step 6, the current tier is Base** for everyone unless the Owner sets it by hand. No month has been awarded yet, so this is accurate, not a gap.
+- **Saving rules** always creates a new numbered version that starts **next** New York month. Saving something identical to what already applies next month is refused. Several saves in one month each make a version; the latest one wins.
+- **Tier names and benefits text** come from the rules. Names appear on every badge, including the check-in kiosk.
+- **Owner override ✅ (client remark; the lasting rule was confirmed by the owner):**
+  - Owner only. Needs a reason. Lasts **until the Owner removes it, or until the end of a month the Owner picks**.
+  - The monthly automatic update does not replace it while it is in effect. When it ends or is removed, the automatic tier applies again.
+  - One override per member: setting a new one replaces the old one. Everything is audit-logged with the reason.
+  - It changes the *current* tier (kiosk, profile). The *projected* tier is still shown, clearly labeled as the automatic result.
+- **The printed member card has no tier** (it would be wrong next month). The on-screen card shows it.
+- **Check-ins** count as visits by New York calendar day; spend counts by the transaction's month (a refund counts in the month it is entered, per Section 8).
+
 ---
 
 ## 8. Transactions and spending ✅
@@ -645,6 +665,7 @@ All tables have `id uuid` primary keys (except where noted), `created_at timesta
 | `transactions` | `customer_id`, `location_id`, `employee_id`, `type` enum, `amount_cents` **> 0**, `adjustment_direction`, `counts_toward_tier`, `refund_of_transaction_id`, `raffle_id`, `occurred_at`, `local_month`, `note`, `voided_at`, `voided_by`, `void_reason` |
 | `tier_rule_sets` | `version` (unique), `effective_from_month`, `visit_value_cents`, `lookback_months` ≥ 1, `lookback_method` (`average`,`every_month`), `carry_over_enabled` (check: requires `lookback_months = 1`), `require_purchase`, `require_visit`, `created_by` |
 | `tier_thresholds` | `rule_set_id`, `tier_key` (`base`,`silver`,`gold`,`diamond`), `display_name`, `rank`, `threshold_cents`, `benefits_text`; thresholds must increase with rank, and Base = 0 |
+| `tier_overrides` | `customer_id`, `tier_key`, `reason`, `last_month` (null = until removed), `created_by`, `created_at`, `removed_at`, `removed_by`, `removal_reason`; **one open row per customer** |
 | `monthly_tier_awards` | `customer_id`, `qualifying_month`, `awarded_month`, `tier_key`, `rule_set_id`, `net_spend_cents`, `qualifying_visits`, `visit_points_cents`, `score_cents`, `carry_in_cents`, `carry_out_cents`, `calc_version`, `run_id`, `is_current`, `superseded_by`, `reason`, `calculated_at`; **unique (`customer_id`, `awarded_month`) where `is_current`** |
 | `tier_rollover_runs` | `awarded_month`, `status`, `started_at`, `finished_at`, `customers_processed`, `error` |
 | `raffle_releases` | `name`, `description`, `image_url`, `release_date`, `created_by` |
@@ -819,9 +840,13 @@ This lets the owner test monthly features without waiting a month.
 - The TypeScript and Postgres engines give the same results.
 
 **Owner test:**
-1. Open Tier Settings. Set Silver $300, Gold $600 and Diamond $1,000, and save. The page says "Takes effect next month".
-2. Give a test customer a check-in and a $350 purchase. Their profile shows **Projected: Silver**, plus how much more is needed for Gold.
-3. Set the visit value to $20, which takes effect next month. See it listed as the upcoming version.
+1. Open **Tier settings** in the menu. You see the four tiers with Silver **$300**, Gold **$600**, Diamond **$1,000**, and a banner saying changes take effect next month.
+2. In **Try it**, enter **$540** spent and **4** days. It says **Silver**. Change the spent amount to **700**. It says **Gold**.
+3. Set the **value of one visit** to **$20** and **Save**. It says it takes effect next month. **Version history** shows version 2 starting next month, and version 1 still "In use this month".
+4. Give a test customer a check-in and a **$350** purchase. Their profile shows **Current tier: Base** and **Projected for next month: Silver**, with a progress bar and what is needed for Gold.
+5. On a customer's profile click **Set tier by hand**, choose **Gold**, write a reason. The profile shows Gold with the reason. Scan their card at the kiosk: it shows **Gold**.
+6. Click **Remove override**. They are back to Base.
+7. Open the **Audit log**. **Tier rules updated**, **Tier set by hand** and **Tier override removed** are listed.
 
 ---
 
@@ -1099,3 +1124,6 @@ SMS one-time-code login and SMS raffle notifications (Twilio, with consent captu
 | 30 | Delete store | Owner can delete a store by typing its name; only stores with no customers, visits or staff. Others are deactivated. Built after the first client demo |
 | 31 | Owner sets customer tier | Manual override by the Owner, with a reason. Built in Step 5 |
 | 32 | Customer PIN | Customer sets a numbers-only PIN (6+ digits) on an on-screen number pad. Built with the portal in Step 7 |
+| 33 | Tier rules are versioned | Saving always creates a new version that starts next month; the current month never changes. Built in Step 5 |
+| 34 | Override lasts | Until the Owner removes it, or until the end of a month the Owner picks. The monthly update doesn't replace it while active |
+| 35 | Printed card | The printed member card shows no tier (it changes monthly); the on-screen card does |

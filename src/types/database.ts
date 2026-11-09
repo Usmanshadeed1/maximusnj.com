@@ -6,6 +6,10 @@
 
 export type EmployeeRole = "owner" | "manager" | "staff";
 
+import type { LookbackMethod, TierKey } from "@/lib/tier/engine";
+
+export type { LookbackMethod, TierKey };
+
 type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type LocationRow = {
@@ -129,6 +133,64 @@ export type RefundablePurchase = {
   store_id: string;
 };
 
+export type TierOverrideRow = {
+  id: string;
+  customer_id: string;
+  tier_key: TierKey;
+  reason: string;
+  last_month: string | null;
+  created_by: string | null;
+  created_at: string;
+  removed_at: string | null;
+  removed_by: string | null;
+  removal_reason: string | null;
+};
+
+export type TierRuleSetRow = {
+  id: string;
+  version: number;
+  effective_from_month: string;
+  visit_value_cents: number;
+  lookback_months: number;
+  lookback_method: LookbackMethod;
+  carry_over_enabled: boolean;
+  require_purchase: boolean;
+  require_visit: boolean;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type TierThresholdRow = {
+  rule_set_id: string;
+  tier_key: TierKey;
+  rank: number;
+  display_name: string;
+  threshold_cents: number;
+  benefits_text: string | null;
+};
+
+/** A rule set with its four tiers, as returned by the database functions. */
+export type TierRuleSetJson = Omit<TierRuleSetRow, never> & {
+  tiers: { tier_key: TierKey; rank: number; display_name: string; threshold_cents: number; benefits_text: string | null }[];
+};
+
+export type TierRulesOverview = {
+  month: string;
+  next_month: string;
+  current: TierRuleSetJson;
+  next: TierRuleSetJson;
+  history: TierRuleSetJson[];
+};
+
+export type TierProjectionJson = {
+  month: string;
+  next_month: string;
+  months: { month: string; spend_cents: number; visits: number }[];
+  carry_in_cents: number;
+  rules: TierRuleSetJson;
+  projected: { tier_key: TierKey; score_cents: number; carry_out_cents: number };
+};
+
 export type VisitStatus = "counted" | "duplicate";
 
 export type VisitRow = {
@@ -179,6 +241,9 @@ export type Database = {
       customers: ReadOnlyTable<CustomerRow>;
       visits: ReadOnlyTable<VisitRow>;
       transactions: ReadOnlyTable<TransactionRow>;
+      tier_rule_sets: ReadOnlyTable<TierRuleSetRow>;
+      tier_thresholds: ReadOnlyTable<TierThresholdRow>;
+      tier_overrides: ReadOnlyTable<TierOverrideRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -254,6 +319,38 @@ export type Database = {
         Args: { p_source_id: string; p_target_id: string; p_reason: string };
         Returns: CustomerRow;
       };
+      tier_rules_overview: {
+        Args: Record<string, never>;
+        Returns: TierRulesOverview;
+      };
+      tier_projection: {
+        Args: { p_customer_id: string };
+        Returns: TierProjectionJson;
+      };
+      customer_tier_override: {
+        Args: { p_customer_id: string };
+        Returns: TierOverrideRow[];
+      };
+      save_tier_rules: {
+        Args: {
+          p_visit_value_cents: number;
+          p_lookback_months: number;
+          p_lookback_method: LookbackMethod;
+          p_carry_over: boolean;
+          p_require_purchase: boolean;
+          p_require_visit: boolean;
+          p_tiers: { tier_key: TierKey; display_name: string; threshold_cents: number; benefits_text: string | null }[];
+        };
+        Returns: TierRuleSetJson;
+      };
+      set_tier_override: {
+        Args: { p_customer_id: string; p_tier: TierKey; p_reason: string; p_last_month?: string | null };
+        Returns: TierOverrideRow;
+      };
+      clear_tier_override: {
+        Args: { p_customer_id: string; p_reason: string };
+        Returns: TierOverrideRow;
+      };
       record_transaction: {
         Args: {
           p_customer_id: string;
@@ -289,7 +386,7 @@ export type Database = {
         Returns: EmployeeRow;
       };
     };
-    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource; visit_status: VisitStatus; transaction_type: TransactionType; adjustment_direction: AdjustmentDirection };
+    Enums: { employee_role: EmployeeRole; customer_status: CustomerStatus; customer_source: CustomerSource; visit_status: VisitStatus; transaction_type: TransactionType; adjustment_direction: AdjustmentDirection; tier_key: TierKey; lookback_method: LookbackMethod };
     CompositeTypes: { [_ in never]: never };
   };
 };

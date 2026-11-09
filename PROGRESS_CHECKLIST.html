@@ -133,12 +133,16 @@ const STEPS = [
       "As the Owner, click Void on a transaction and give a reason. It stays in the list as Voided, and spending updates.",
       "Open the Audit log. The past-month entry and the void are listed."
     ] },
-  { n: 5, status: "not-started", name: "Tier engine and Tier Settings",
+  { n: 5, status: "ready-to-test", name: "Tier engine and Tier Settings",
     goal: "Tiers are calculated with your settings, and customers see their progress.",
     tests: [
-      "Open Tier Settings, set Silver $300 / Gold $600 / Diamond $1,000, and save. It says \"Takes effect next month\".",
-      "Give a test customer a check-in and a $350 purchase. Their profile shows Projected: Silver, plus what's needed for Gold.",
-      "Set the visit value to $20. It's listed as the upcoming version."
+      "Open Tier settings in the menu. You see Silver $300, Gold $600, Diamond $1,000, and a banner saying changes take effect next month.",
+      "In Try it, enter $540 spent and 4 days. It says Silver. Change the spent amount to 700. It says Gold.",
+      "Set the value of one visit to $20 and Save. It says it takes effect next month. Version history shows version 2 starting next month, and version 1 still In use this month.",
+      "Give a test customer a check-in and a $350 purchase. Their profile shows Current tier: Base and Projected for next month: Silver, with a progress bar and what is needed for Gold.",
+      "On a customer's profile click Set tier by hand, choose Gold, write a reason. The profile shows Gold with the reason. Scan their card at the kiosk: it shows Gold.",
+      "Click Remove override. They are back to Base.",
+      "Open the Audit log. Tier rules updated, Tier set by hand and Tier override removed are listed."
     ] },
   { n: 6, status: "not-started", name: "Monthly tier update",
     goal: "Tiers update automatically at midnight on the 1st of every month (New York time).",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBusinessDate, formatBusinessDateTime, formatCents } from "./format";
+import { formatBusinessDate, formatBusinessDateTime, formatCalendarDate, formatCents, formatMonthYear } from "./format";
 
 describe("formatBusinessDateTime", () => {
   it("shows New York local time", () => {
@@ -30,5 +30,14 @@ describe("formatBusinessDate", () => {
   it("handles daylight saving time", () => {
     // 03:30 UTC on Jul 1 is still Jun 30 in New York (EDT, UTC-4).
     expect(formatBusinessDate("2026-07-01T03:30:00Z")).toBe("Jun 30, 2026");
+  });
+});
+
+describe("month and calendar date labels", () => {
+  it("formats without any time-zone shift", () => {
+    expect(formatMonthYear("2026-11-01")).toBe("November 2026");
+    expect(formatMonthYear("2027-01-01")).toBe("January 2027");
+    expect(formatCalendarDate("2026-12-01")).toBe("Dec 1, 2026");
+    expect(formatCalendarDate("2026-12-01T00:00:00.000Z")).toBe("Dec 1, 2026");
   });
 });

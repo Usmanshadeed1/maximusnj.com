@@ -96,3 +96,8 @@ export function canVoidTransactions(actor: EmployeeRole): boolean {
 export function canBackdateAnyMonth(actor: EmployeeRole): boolean {
   return actor === "owner";
 }
+
+/** Only the Owner changes how tiers are earned, and sets a customer's tier by hand. */
+export function canManageTiers(actor: EmployeeRole): boolean {
+  return actor === "owner";
+}

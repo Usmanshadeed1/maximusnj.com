@@ -1,5 +1,5 @@
 import { Logo } from "@/components/brand/logo";
-import { TierBadge } from "@/components/tier-badge";
+import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { cn } from "@/lib/utils";
 import { Barcode } from "./barcode";
 
@@ -11,10 +11,13 @@ import { Barcode } from "./barcode";
 export function MemberCard({
   name,
   memberNumber,
+  tier,
   className,
 }: {
   name: string;
   memberNumber: string;
+  /** Shown on screen only. The printed card leaves it out because a tier changes every month. */
+  tier?: { key: TierKey; label: string };
   className?: string;
 }) {
   return (
@@ -29,7 +32,7 @@ export function MemberCard({
         />
         <div className="relative flex items-start justify-between">
           <Logo className="w-[34cqw]" />
-          <TierBadge tier="base" tone="dark" className="px-[2.4cqw] py-[0.8cqw] text-[2.6cqw]" />
+          {tier && <TierBadge tier={tier.key} label={tier.label} tone="dark" className="px-[2.4cqw] py-[0.8cqw] text-[2.6cqw]" />}
         </div>
         <div className="relative">
           <p className="truncate text-[4.4cqw] leading-tight font-bold">{name}</p>

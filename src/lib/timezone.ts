@@ -65,3 +65,13 @@ export function nyWallTimeToInstant(date: string, time: string): Date {
   if (Number.isNaN(result.getTime())) throw new RangeError("Invalid date");
   return result;
 }
+
+/** "2026-11-01" + 2 → "2027-01-01". Works on the first day of a month; pure string/number math. */
+export function addMonths(monthStart: string, months: number): string {
+  const m = /^(\d{4})-(\d{2})-01$/.exec(monthStart);
+  if (!m) throw new RangeError("Expected the first day of a month, like 2026-11-01");
+  const index = +m[1] * 12 + (+m[2] - 1) + months;
+  const year = Math.floor(index / 12);
+  const month = (index % 12) + 1;
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}

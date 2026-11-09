@@ -11,6 +11,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentEmployee, requireEmployee } from "@/server/auth";
 import { KIOSK_COOKIE, KIOSK_COOKIE_OPTIONS, getKioskStore } from "@/server/kiosk-context";
 import { getSelectedStore } from "@/server/store-context";
+import { getTierLabels } from "@/server/tiers";
+import type { TierKey } from "@/lib/tier/engine";
 import type { Database } from "@/types/database";
 
 /** Turns this device into the check-in kiosk for the currently selected store. */
@@ -39,12 +41,19 @@ export async function checkInAction(rawMemberNumber: string, deviceId: string | 
     p_device_id: deviceId?.slice(0, 64) ?? null,
   });
   if (error || !data) return { kind: "error" };
+  const labels = await getTierLabels();
 
   switch (data.result) {
     case "checked_in":
-      return { kind: "checked_in", firstName: data.first_name, tier: data.tier, qualifying: data.qualifying };
+      return {
+        kind: "checked_in",
+        firstName: data.first_name,
+        tier: data.tier,
+        tierLabel: labels[data.tier as TierKey],
+        qualifying: data.qualifying,
+      };
     case "already_checked_in":
-      return { kind: "already_checked_in", firstName: data.first_name, tier: data.tier };
+      return { kind: "already_checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey] };
     case "not_found":
       return { kind: "not_found" };
     case "inactive":

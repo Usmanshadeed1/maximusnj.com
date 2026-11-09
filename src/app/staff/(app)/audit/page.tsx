@@ -3,7 +3,7 @@ import { History } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/page-header";
 import { THead, Table, Td, Th, Tr } from "@/components/ui/table";
-import { formatBusinessDate, formatBusinessDateTime, formatCents } from "@/lib/format";
+import { formatBusinessDate, formatBusinessDateTime, formatCalendarDate, formatCents, formatMonthYear } from "@/lib/format";
 import { TRANSACTION_TYPE_INFO } from "@/lib/transactions";
 import { formatPhone } from "@/lib/phone";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -32,6 +32,9 @@ const ACTION_LABELS: Record<string, string> = {
   "transaction.adjustment": "Adjustment recorded",
   "transaction.backdated": "Back-dated entry",
   "transaction.void": "Transaction voided",
+  "tier_rules.update": "Tier rules updated",
+  "customer.tier_override_set": "Tier set by hand",
+  "customer.tier_override_clear": "Tier override removed",
 };
 
 const CUSTOMER_FIELD_LABELS: Record<string, string> = {
@@ -83,6 +86,18 @@ function describeChange(
       return subject ?? "";
     case "employee.stores_change":
       return `${subject}: ${storeNames(before.location_ids)} → ${storeNames(after.location_ids)}`;
+    case "tier_rules.update":
+      return `Version ${String(after.version)} saved — starts ${formatCalendarDate(String(after.effective_from_month))}`;
+    case "customer.tier_override_set": {
+      const cap = (v: Json) => String(v).charAt(0).toUpperCase() + String(v).slice(1);
+      const from = before.tier_key ? `${cap(before.tier_key)} → ` : "";
+      const until = after.last_month ? ` until the end of ${formatMonthYear(String(after.last_month))}` : "";
+      return `${subject ?? "Customer"}: ${from}${cap(after.tier_key)}${until}${row.reason ? ` — ${row.reason}` : ""}`;
+    }
+    case "customer.tier_override_clear": {
+      const tier = String(before.tier_key ?? "");
+      return `${subject ?? "Customer"}: ${tier.charAt(0).toUpperCase() + tier.slice(1)} override removed${row.reason ? ` — ${row.reason}` : ""}`;
+    }
     case "transaction.adjustment":
     case "transaction.backdated":
     case "transaction.void": {

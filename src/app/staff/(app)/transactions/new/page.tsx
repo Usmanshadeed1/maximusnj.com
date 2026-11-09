@@ -13,6 +13,7 @@ import { nyDateString, nyMonthStartString, nyTimeString } from "@/lib/timezone";
 import { requireEmployee } from "@/server/auth";
 import { getCustomer, getRecentCustomers, getStoreNameMap, searchCustomers } from "@/server/customers";
 import { getMyActiveStores, getSelectedStore } from "@/server/store-context";
+import { getCurrentTier } from "@/server/tiers";
 import { getRefundablePurchases, getSpend } from "@/server/transactions";
 import { CustomerSearch } from "../../customers/customer-search";
 import { TransactionForm } from "./transaction-form";
@@ -53,11 +54,12 @@ export default async function NewTransactionPage({ searchParams }: PageProps<"/s
       );
     }
 
-    const [spend, refunds, stores, selected] = await Promise.all([
+    const [spend, refunds, stores, selected, tier] = await Promise.all([
       getSpend(customer.id),
       getRefundablePurchases(customer.id),
       getMyActiveStores(),
       getSelectedStore(),
+      getCurrentTier(customer.id),
     ]);
     const now = new Date();
 
@@ -71,7 +73,7 @@ export default async function NewTransactionPage({ searchParams }: PageProps<"/s
             <p className="truncate text-lg font-bold text-brand-navy-deep">{name}</p>
             <p className="mt-0.5 font-mono text-sm font-semibold tracking-wider text-brand-blue">{customer.member_number}</p>
             <div className="mt-2">
-              <TierBadge tier="base" />
+              <TierBadge tier={tier.key} label={tier.label} />
             </div>
           </div>
           <dl className="flex gap-6 text-right">

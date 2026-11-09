@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeftRight, LogOut, Store } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { type NavKey, StaffNav } from "@/components/staff/staff-nav";
-import { ROLE_LABELS, canManageLocations, canViewAuditLog, canViewEmployees } from "@/lib/permissions";
+import { ROLE_LABELS, canManageLocations, canManageTiers, canViewAuditLog, canViewEmployees } from "@/lib/permissions";
 import { signOutAction } from "@/server/actions/auth";
 import { requireEmployee } from "@/server/auth";
 import { getSelectedStore } from "@/server/store-context";
@@ -18,6 +18,7 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
   const nav: NavKey[] = ["dashboard", "customers", "transactions", "kiosk"];
   if (canManageLocations(employee.role)) nav.push("stores");
   if (canViewEmployees(employee.role)) nav.push("employees");
+  if (canManageTiers(employee.role)) nav.push("tiers");
   if (canViewAuditLog(employee.role)) nav.push("audit");
 
   return (
