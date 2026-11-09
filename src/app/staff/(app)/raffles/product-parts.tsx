@@ -6,32 +6,43 @@ import { type PickerProduct, ChoicePicker } from "@/components/raffles/choice-pi
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, useDialog } from "@/components/ui/dialog";
-import { FormMessage, SubmitButton } from "@/components/ui/form";
+import { CheckboxField, FormMessage, SubmitButton } from "@/components/ui/form";
 import { idleState } from "@/lib/action-result";
 import { setRaffleProductsAction } from "@/server/actions/products";
 import { assignProductAction, enterMemberAction } from "@/server/actions/raffles";
 
-/** On the "new raffle" forms: which products the raffle offers, in the order members see them. */
+/** Tick the products a raffle offers. No order here: members put them in their own order when they enter. */
+function ProductCheckboxes({ products, selected, onChange }: { products: PickerProduct[]; selected: string[]; onChange: (next: string[]) => void }) {
+  return (
+    <div className="grid gap-2.5 sm:grid-cols-2">
+      {products.map((p) => (
+        <CheckboxField
+          key={p.id}
+          name="productIds"
+          value={p.id}
+          label={p.name}
+          description={p.description ?? undefined}
+          checked={selected.includes(p.id)}
+          onChange={(e) => onChange(e.target.checked ? [...selected, p.id] : selected.filter((id) => id !== p.id))}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** On the "new raffle" forms: which products the raffle offers. */
 export function RaffleProductsField({ products }: { products: PickerProduct[] }) {
-  const [order, setOrder] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   return (
     <Card className="p-5 sm:p-6">
       <h2 className="text-base font-bold text-brand-navy-deep">Products in this raffle</h2>
       <p className="mt-1 mb-4 text-sm text-muted-foreground">
-        Members rank the products they want. Leave empty for a single-item raffle. Add products in the Products page.
+        Tick the products in this raffle. Members put them in their own order of preference when they enter. Leave all unticked for a single-item raffle.
       </p>
       {products.length === 0 ? (
         <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">No products yet. Add them under Products in the menu.</p>
       ) : (
-        <ChoicePicker
-          products={products}
-          value={order}
-          onChange={setOrder}
-          name="productIds"
-          orderedLabel="Offered, in this order"
-          availableLabel="Tap to add"
-          emptyText="No products picked: this raffle is for a single item."
-        />
+        <ProductCheckboxes products={products} selected={selected} onChange={setSelected} />
       )}
     </Card>
   );
@@ -65,7 +76,7 @@ export function ChangeProductsDialog({
 
 function ChangeProductsForm({ releaseId, raffleId, all, current }: { releaseId: string; raffleId: string; all: PickerProduct[]; current: string[] }) {
   const [state, formAction] = useActionState(setRaffleProductsAction, idleState);
-  const [order, setOrder] = useState(current);
+  const [selected, setSelected] = useState(current);
   const { close } = useDialog();
   useEffect(() => {
     if (state.ok) close();
@@ -83,7 +94,8 @@ function ChangeProductsForm({ releaseId, raffleId, all, current }: { releaseId: 
       <FormMessage state={state} />
       <input type="hidden" name="releaseId" value={releaseId} />
       <input type="hidden" name="raffleId" value={raffleId} />
-      <ChoicePicker products={all} value={order} onChange={setOrder} name="productIds" orderedLabel="Offered, in this order" emptyText="No products: a single-item raffle." />
+      <p className="text-sm text-muted-foreground">Tick the products in this raffle. Once people have entered, products can be added but not taken off.</p>
+      <ProductCheckboxes products={all} selected={selected} onChange={setSelected} />
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={close}>
           Cancel

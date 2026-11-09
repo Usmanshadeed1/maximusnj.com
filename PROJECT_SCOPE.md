@@ -551,7 +551,7 @@ During the current month, the staff app and the portal show:
 ### 10.10 Raffle products ✅ (client request, after Step 12)
 
 - **Products** (staff menu, Owner and Managers): a list of the items the store raffles: name, optional description and picture. A product can be turned off (it then can't be added to new raffles; raffles that already offer it keep it). Names are unique.
-- **A raffle can offer several products**, chosen (in order) when it is set up or later on the raffle page. Before anyone has entered the list can change freely; afterwards products can only be **added**. A raffle with no products works as before (one item).
+- **A raffle can offer several products**, ticked when it is set up or later on the raffle page (no ranking by staff; the ranking is the member's). Before anyone has entered the list can change freely; afterwards products can only be **added**. A raffle with no products works as before (one item).
 - **Members rank the products they want** when they enter: they tap them in order of preference (1st, 2nd, 3rd…), at least one. Staff entering someone in store record the ranking the same way. The member page shows their choices.
 - **After the draw**, the ranked list (#1 to the last) shows each person's choices next to their position. **Staff give each person a product by hand** ("Give"), and can change or take it back until the raffle is finished. The app does **not** pick products automatically. A winner sees the product they were given; the CSV export includes everyone's choices and the product given. Every change is audit-logged.
 - Not built (by decision): automatic assignment by position and choice, product prices, quantity per product.

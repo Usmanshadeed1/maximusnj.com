@@ -153,13 +153,13 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
           )}
         </div>
         {offered.length > 0 && (
-          <ol className="mt-4 flex flex-wrap gap-2">
-            {offered.map((p, i) => (
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {offered.map((p) => (
               <li key={p.id} className="inline-flex items-center gap-2 rounded-full border bg-secondary/50 px-3 py-1.5 text-sm font-medium">
-                <span className="text-xs font-bold text-muted-foreground">{i + 1}.</span> {p.name}
+                {p.name}
               </li>
             ))}
-          </ol>
+          </ul>
         )}
       </Card>
 
