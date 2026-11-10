@@ -193,14 +193,14 @@ create temp table t_kiosk (label text primary key, r jsonb);
 grant all on t_kiosk to authenticated;
 
 insert into t_kiosk select 'none', public.check_in('PTS000001', '00000000-0000-0000-0000-0000000007c1', 'tab');
-select is((select r ->> 'result' from t_kiosk where label = 'none'), 'pin_required', 'A member with a PIN is asked for it');
-select ok((select not (r ? 'first_name') and not (r ? 'tier') from t_kiosk where label = 'none'), 'Nothing about the member is shown before the PIN');
+select is((select r ->> 'result' from t_kiosk where label = 'none'), 'already_checked_in', 'A card alone checks the member in, even when they have a PIN (already in today here)');
+select ok((select (r ? 'first_name') and not (r ?| array['last_name', 'email', 'mobile_phone']) from t_kiosk where label = 'none'), 'The kiosk only gets the first name and tier');
 
 insert into t_kiosk select 'w1', public.check_in('PTS000001', '00000000-0000-0000-0000-0000000007c1', 'tab', '111111');
 select is((select r ->> 'result' from t_kiosk where label = 'w1'), 'pin_incorrect', 'A wrong PIN is refused');
 select is((select r ->> 'attempts_left' from t_kiosk where label = 'w1'), '4', 'It says how many tries are left');
-select is((select count(*)::int from public.visits where customer_id = '00000000-0000-0000-0000-0000000007d1' and checked_in_at > now() - interval '1 minute' and status = 'duplicate'), 0,
-  'A wrong PIN records no visit');
+select is((select count(*)::int from public.visits where customer_id = '00000000-0000-0000-0000-0000000007d1' and checked_in_at > now() - interval '1 minute' and status = 'duplicate'), 1,
+  'A wrong PIN records no visit (the one repeat visit is the card scan above)');
 select public.check_in('PTS000001', '00000000-0000-0000-0000-0000000007c1', 'tab', '111111');
 select public.check_in('PTS000001', '00000000-0000-0000-0000-0000000007c1', 'tab', '111111');
 select public.check_in('PTS000001', '00000000-0000-0000-0000-0000000007c1', 'tab', '111111');

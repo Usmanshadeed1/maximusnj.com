@@ -69,17 +69,17 @@ reset role;
 
 -- 3. At the kiosk -------------------------------------------------------------------------------------------
 select pg_temp.act_as('00000000-0000-0000-0000-000000000ea3');
-select is(public.check_in('SPN000001', '00000000-0000-0000-0000-000000000ec1', 'tab') ->> 'result', 'pin_required', 'The Manager''s card alone asks for the PIN');
+select is(public.check_in('SPN000001', '00000000-0000-0000-0000-000000000ec1', 'tab') ->> 'result', 'checked_in', 'The Manager''s card alone just checks them in (the dashboard needs the PIN)');
 insert into t select 'card', public.check_in('SPN000001', '00000000-0000-0000-0000-000000000ec1', 'tab', '550011');
 select is((select r ->> 'result' from t where label = 'card'), 'staff_choice', 'Card + PIN of an employee offers the choice');
-select is((select count(*)::int from public.visits where customer_id = '00000000-0000-0000-0000-000000000ed1'), 0, 'Nothing is checked in until they choose');
+select is((select count(*)::int from public.visits where customer_id = '00000000-0000-0000-0000-000000000ed1'), 1, 'Typing the PIN adds no visit until they choose (the one visit is the card scan)');
 insert into t select 'pinonly', public.check_in_by_pin('770022', '00000000-0000-0000-0000-000000000ec1', 'tab');
 select is((select r ->> 'result' from t where label = 'pinonly'), 'staff_choice', 'The Owner''s PIN alone offers the choice too (no card needed)');
 select is((select r ->> 'result' from t where label = 'card') = 'staff_choice' and public.check_in('SPN000002', '00000000-0000-0000-0000-000000000ec1', 'tab', '330044') ->> 'result' = 'checked_in', true,
   'A customer''s card + PIN simply checks them in');
 
-select is(public.kiosk_staff_check_in((select r ->> 'token' from t where label = 'card'), '00000000-0000-0000-0000-000000000ec1', 'tab') ->> 'result', 'checked_in',
-  'Choosing "Check in" records the visit');
+select is(public.kiosk_staff_check_in((select r ->> 'token' from t where label = 'card'), '00000000-0000-0000-0000-000000000ec1', 'tab') ->> 'result', 'already_checked_in',
+  'Choosing "Check in" records the visit (a repeat here, after the card scan)');
 select throws_ok($$ select public.kiosk_staff_check_in((select r ->> 'token' from t where label = 'card'), '00000000-0000-0000-0000-000000000ec1', 'tab') $$,
   'P0001', 'token_invalid', 'A token works only once');
 select throws_ok($$ select public.kiosk_staff_sign_in((select r ->> 'token' from t where label = 'pinonly'), '00000000-0000-0000-0000-000000000ec2') $$,

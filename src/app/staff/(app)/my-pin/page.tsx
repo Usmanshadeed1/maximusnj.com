@@ -34,7 +34,7 @@ export default async function MyPinPage() {
             <PinSetup
               hasPin={card.has_pin}
               save={setStaffPinAction}
-              intro={`At the kiosk, scan your card and type your PIN, or just type your PIN. You can then check in, or open the staff dashboard without your password. Every PIN is different, so you may be asked to choose another.`}
+              intro={`Scanning your card at the kiosk just checks you in. To open the staff dashboard, tap “Check in with my PIN” and type your PIN, then choose Go to staff dashboard. Every PIN is different, so you may be asked to choose another.`}
             />
           </Card>
         </div>
