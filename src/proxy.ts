@@ -47,6 +47,13 @@ export async function proxy(request: NextRequest) {
 
   // A device in kiosk mode stays on the kiosk. Leaving needs staff credentials (§6).
   const isKioskDevice = request.cookies.has(KIOSK_COOKIE);
+  // The store tablet never shows the home page: it always opens the check-in kiosk.
+  if (isKioskDevice && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/staff/kiosk";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
   if (isKioskDevice && pathname.startsWith("/staff") && !pathname.startsWith("/staff/kiosk") && !isPublicStaffPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/staff/kiosk";
@@ -58,5 +65,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/staff/:path*", "/auth/:path*", "/my/:path*"],
+  matcher: ["/", "/staff/:path*", "/auth/:path*", "/my/:path*"],
 };

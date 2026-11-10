@@ -11,6 +11,7 @@ import { type KioskOutcome, cleanMemberNumber, kioskScreen, unknownPinMessage, w
 import { cn } from "@/lib/utils";
 import { checkInAction, checkInByPinAction } from "@/server/actions/kiosk";
 import { kioskStaffCheckInAction, kioskStaffSignInAction } from "@/server/actions/staff-pin";
+import { KioskMemberPage } from "./kiosk-member-page";
 import { KioskPin } from "./kiosk-pin";
 import { StaffCredentialsForm } from "./staff-credentials-form";
 
@@ -27,6 +28,8 @@ type Phase =
   | { type: "pinOnly"; error: string | null; attempt: number }
   /** An employee: check in, or go to the staff dashboard. */
   | { type: "staffChoice"; firstName: string; token: string }
+  /** Checked in: the member sees their own page until they press Done. */
+  | { type: "member"; pass: string; firstName: string; alreadyIn: boolean }
   | { type: "result"; outcome: KioskOutcome };
 
 /** Stable id for this tablet (attached to every visit). Falls back gracefully if storage is blocked. */
@@ -98,6 +101,16 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
     return () => clearInterval(timer);
   }, [interactive]);
 
+  /** A member who checked in sees their own page; anything else gets the big green or red screen. */
+  const showOutcome = (outcome: KioskOutcome) => {
+    if ((outcome.kind === "checked_in" || outcome.kind === "already_checked_in") && outcome.viewPass) {
+      setPhase({ type: "member", pass: outcome.viewPass, firstName: outcome.firstName, alreadyIn: outcome.kind === "already_checked_in" });
+      return;
+    }
+    setPhase({ type: "result", outcome });
+    if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+  };
+
   /** Sends the scan (and the PIN, once asked for) and shows what came back. */
   const run = async (memberNumber: string, pin: string | null, attempt: number) => {
     setPhase({ type: "checking" });
@@ -121,8 +134,7 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
       setPhase({ type: "staffChoice", firstName: outcome.firstName, token: outcome.token });
       return;
     }
-    setPhase({ type: "result", outcome });
-    if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+    showOutcome(outcome);
   };
 
   /** PIN on its own (no card). */
@@ -142,8 +154,7 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
       setPhase({ type: "staffChoice", firstName: outcome.firstName, token: outcome.token });
       return;
     }
-    setPhase({ type: "result", outcome });
-    if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+    showOutcome(outcome);
   };
 
   /** The employee chose "Check in". */
@@ -155,8 +166,7 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
     } catch {
       outcome = { kind: "error" };
     }
-    setPhase({ type: "result", outcome });
-    if (outcome.kind !== "session_expired") resetTimer.current = setTimeout(backToReady, RESULT_MS);
+    showOutcome(outcome);
   };
 
   const submit = async () => {
@@ -304,6 +314,11 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
           onCheckIn={() => void staffCheckIn(phase.token)}
           onCancel={backToReady}
         />
+      )}
+
+      {/* The member's own page */}
+      {phase.type === "member" && (
+        <KioskMemberPage pass={phase.pass} firstName={phase.firstName} alreadyIn={phase.alreadyIn} onDone={backToReady} />
       )}
 
       {/* Result */}

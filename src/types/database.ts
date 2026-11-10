@@ -271,8 +271,8 @@ export type VisitRow = {
 
 /** What check_in returns — only what the kiosk is allowed to show. */
 export type CheckInResult =
-  | { result: "checked_in"; first_name: string; tier: string; qualifying: boolean }
-  | { result: "already_checked_in"; first_name: string; tier: string }
+  | { result: "checked_in"; first_name: string; tier: string; qualifying: boolean; view_pass?: string }
+  | { result: "already_checked_in"; first_name: string; tier: string; view_pass?: string }
   | { result: "not_found" }
   | { result: "inactive" }
   | { result: "pin_required" }
@@ -526,6 +526,18 @@ export type PortalRaffleJson = {
   result: PortalRaffleResult | null;
 };
 
+/** What the kiosk may show a member who just checked in: no email, phone or purchases. */
+export type KioskMemberViewJson = {
+  first_name: string;
+  last_name: string;
+  member_number: string;
+  month: string;
+  tier: TierKey;
+  rules: Omit<TierRuleSetJson, "created_by">;
+  projection: Omit<TierProjectionJson, "rules"> & { rules: Omit<TierRuleSetJson, "created_by"> };
+  raffles: PortalRaffleJson[] | null;
+};
+
 type RaffleSetupArgs = {
   p_pickup_rule: RafflePickupRule;
   p_pickup_location_id: string | null;
@@ -737,6 +749,9 @@ export type Database = {
       link_employee_card: { Args: { p_employee_id: string; p_member_number: string }; Returns: string };
       create_employee_card: { Args: { p_employee_id: string; p_location_id: string }; Returns: string };
       unlink_employee_card: { Args: { p_employee_id: string }; Returns: boolean };
+      kiosk_member_view: { Args: { p_token: string; p_location_id: string }; Returns: KioskMemberViewJson };
+      kiosk_member_enter_raffle: { Args: { p_token: string; p_location_id: string; p_raffle_id: string; p_choices?: string[] }; Returns: boolean };
+      kiosk_member_withdraw: { Args: { p_token: string; p_location_id: string; p_raffle_id: string }; Returns: boolean };
       portal_link_account: { Args: Record<string, never>; Returns: { state: LinkState } };
       portal_locations: { Args: Record<string, never>; Returns: { id: string; name: string }[] };
       portal_sign_up: {

@@ -44,10 +44,10 @@ export async function kioskStaffCheckInAction(token: string, deviceId: string | 
   if (error || !data) return { kind: "error" };
   const labels = await getTierLabels();
   if (data.result === "checked_in") {
-    return { kind: "checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey], qualifying: data.qualifying };
+    return { kind: "checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey], qualifying: data.qualifying, viewPass: data.view_pass };
   }
   if (data.result === "already_checked_in") {
-    return { kind: "already_checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey] };
+    return { kind: "already_checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey], viewPass: data.view_pass };
   }
   return { kind: "error" };
 }

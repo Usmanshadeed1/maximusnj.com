@@ -59,9 +59,10 @@ async function toOutcome(data: CheckInResult): Promise<KioskOutcome> {
         tier: data.tier,
         tierLabel: labels[data.tier as TierKey],
         qualifying: data.qualifying,
+        viewPass: data.view_pass,
       };
     case "already_checked_in":
-      return { kind: "already_checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey] };
+      return { kind: "already_checked_in", firstName: data.first_name, tier: data.tier, tierLabel: labels[data.tier as TierKey], viewPass: data.view_pass };
     case "not_found":
       return { kind: "not_found" };
     case "inactive":

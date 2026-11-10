@@ -1,154 +1,85 @@
 import Link from "next/link";
-import { LogIn, ScanLine, Ticket, TrendingUp, UserRound } from "lucide-react";
+import { redirect } from "next/navigation";
+import { ArrowRight, Mail, ScanLine, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { siteConfig } from "@/config/site";
+import { isSupabaseConfigured } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentEmployee } from "@/server/auth";
 
 const TIERS: TierKey[] = ["base", "silver", "gold", "diamond"];
 
-const FEATURES = [
-  {
-    icon: TrendingUp,
-    title: "Earn your tier every month",
-    description:
-      "Shop and visit any Maximus store to move up from Base to Silver, Gold and Diamond.",
-  },
-  {
-    icon: Ticket,
-    title: "Release raffles",
-    description:
-      "Enter raffles for new releases online or in store. One entry per member, fair odds for everyone.",
-  },
-  {
-    icon: ScanLine,
-    title: "Scan in at the door",
-    description: "Your member card checks you in at the entrance in a second.",
-  },
-] as const;
+/**
+ * The one way in. Someone already signed in goes straight to their own pages (staff → staff app,
+ * member → member page). Everyone else chooses how to sign in. The store tablet never shows this
+ * page: it always opens the check-in kiosk, where a card or PIN is used and the visit counts.
+ */
+export default async function HomePage() {
+  if (isSupabaseConfigured()) {
+    const employee = await getCurrentEmployee();
+    if (employee) redirect("/staff");
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getClaims();
+    if (data?.claims?.sub) redirect("/my");
+  }
 
-export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-brand-navy-deep text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-40 -right-32 size-[28rem] rounded-full bg-brand-blue/40 blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-48 -left-24 size-[22rem] rounded-full bg-brand-yellow/15 blur-3xl"
-        />
+    <main className="relative flex min-h-dvh flex-1 flex-col overflow-hidden bg-brand-navy-deep text-white">
+      <div aria-hidden className="pointer-events-none absolute -top-48 -right-40 size-[36rem] rounded-full bg-brand-blue/40 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-56 -left-32 size-[30rem] rounded-full bg-brand-yellow/10 blur-3xl" />
 
-        {/* Top bar: logo left, sign-in right */}
-        <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:pt-8">
-          <Logo priority className="w-28 sm:w-44" />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/my/login"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-brand-yellow px-4 text-sm font-semibold text-brand-navy-deep transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-            >
-              <UserRound aria-hidden className="size-4" />
-              Member login
-            </Link>
-            <Link
-              href="/staff/login"
-              className="inline-flex h-11 items-center gap-2 rounded-md border border-white/30 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-brand-yellow hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-            >
-              <LogIn aria-hidden className="size-4" />
-              <span className="sm:hidden">Staff</span>
-              <span className="hidden sm:inline">Staff log in</span>
-            </Link>
-          </div>
-        </header>
+      <header className="relative mx-auto flex w-full max-w-5xl items-center px-5 pt-6 sm:px-8">
+        <Logo priority className="w-32 sm:w-44" />
+      </header>
 
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-14 pb-20 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:pt-20 lg:pb-28">
-          <div className="flex-1">
-            <div>
-              <p className="text-sm font-semibold tracking-[0.2em] text-brand-yellow uppercase">
-                Members Club · Coming soon
-              </p>
-              <h1 className="mt-4 text-4xl leading-[1.1] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                Your collection deserves <span className="text-brand-yellow">VIP treatment.</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-lg text-white/75">
-                Earn loyalty tiers, enter release raffles, and track your progress — all from your
-                phone. No app to download.
-              </p>
-            </div>
-          </div>
+      <section className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-5 py-12 text-center sm:px-8">
+        <p className="text-sm font-semibold tracking-[0.25em] text-brand-yellow uppercase">Maximus Members</p>
+        <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-balance sm:text-6xl">Welcome back</h1>
+        <p className="mt-4 max-w-xl text-lg text-white/75">Sign in to see your tier, your progress and the latest raffles.</p>
 
-          {/* Member card preview */}
-          <div className="flex flex-1 justify-center lg:justify-end">
-            <div
-              role="img"
-              aria-label="Preview of a Maximus member card"
-              className="relative aspect-[1.586] w-full max-w-sm rotate-[-3deg] rounded-2xl bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy-deep p-6 shadow-2xl ring-1 ring-white/15 transition-transform duration-500 hover:rotate-0"
-            >
-              <div className="flex h-full flex-col justify-between">
-                <div className="flex items-start justify-between">
-                  <Logo className="w-28" />
-                  <TierBadge tier="gold" />
-                </div>
-                <div>
-                  <p className="text-xs tracking-[0.25em] text-white/60 uppercase">Member</p>
-                  <p className="mt-1 font-mono text-2xl font-semibold tracking-widest">MAX000001</p>
-                  <div
-                    aria-hidden
-                    className="mt-3 h-8 w-3/4 rounded-sm bg-[repeating-linear-gradient(90deg,#fff_0_2px,transparent_2px_4px,#fff_4px_5px,transparent_5px_8px)] opacity-80"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+          <Link
+            href="/my/login"
+            className="group flex flex-col items-start gap-3 rounded-3xl bg-white p-6 text-left text-brand-navy-deep shadow-2xl transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-yellow"
+          >
+            <span className="grid size-12 place-items-center rounded-full bg-brand-yellow">
+              <Mail aria-hidden className="size-6" />
+            </span>
+            <span className="text-xl font-bold">I&apos;m a member</span>
+            <span className="text-sm text-muted-foreground">Sign in with your email. We send you a code. New here? You can join too.</span>
+            <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue">
+              Member sign in <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+          <Link
+            href="/staff/login"
+            className="group flex flex-col items-start gap-3 rounded-3xl border-2 border-white/25 bg-white/10 p-6 text-left backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-yellow"
+          >
+            <span className="grid size-12 place-items-center rounded-full bg-white/15">
+              <ShieldCheck aria-hidden className="size-6 text-brand-yellow" />
+            </span>
+            <span className="text-xl font-bold">I work at Maximus</span>
+            <span className="text-sm text-white/70">Staff, Managers and the Owner sign in with email and password.</span>
+            <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold text-brand-yellow">
+              Staff sign in <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+        </div>
+
+        <p className="mt-8 flex max-w-xl items-start gap-2 text-left text-sm text-white/70">
+          <ScanLine aria-hidden className="mt-0.5 size-5 shrink-0 text-brand-yellow" />
+          In a Maximus store? Scan your card or type your PIN at the check-in tablet. That counts your visit.
+        </p>
+
+        <div aria-hidden className="mt-12 hidden items-center gap-3 opacity-80 sm:flex">
+          {TIERS.map((tier) => (
+            <TierBadge key={tier} tier={tier} tone="dark" />
+          ))}
         </div>
       </section>
 
-      {/* Tier ladder */}
-      <section className="mx-auto -mt-10 w-full max-w-6xl px-4 sm:px-6">
-        <Card className="relative">
-          <CardContent className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:justify-between">
-            <p className="text-sm font-semibold text-muted-foreground">Four tiers to climb</p>
-            <ol className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-              {TIERS.map((tier, index) => (
-                <li key={tier} className="flex items-center gap-2 sm:gap-3">
-                  <TierBadge tier={tier} />
-                  {index < TIERS.length - 1 && (
-                    <span aria-hidden className="text-muted-foreground">
-                      →
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Features */}
-      <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 py-14 sm:px-6 md:grid-cols-3">
-        {FEATURES.map(({ icon: Icon, title, description }) => (
-          <Card key={title}>
-            <CardHeader>
-              <span className="mb-2 grid size-11 place-items-center rounded-lg bg-secondary text-brand-blue">
-                <Icon aria-hidden className="size-5" />
-              </span>
-              <CardTitle>{title}</CardTitle>
-              <CardDescription className="text-[0.95rem] leading-relaxed">
-                {description}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </section>
-
-      <footer className="mt-auto border-t bg-card">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:px-6">
-          <p>© {siteConfig.name}</p>
-          <p>Ask in store about joining the members club.</p>
-        </div>
-      </footer>
+      <footer className="relative py-5 text-center text-sm text-white/50">© {siteConfig.name}</footer>
     </main>
   );
 }

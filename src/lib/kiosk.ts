@@ -4,8 +4,8 @@
  */
 
 export type KioskOutcome =
-  | { kind: "checked_in"; firstName: string; tier: string; tierLabel?: string; qualifying: boolean }
-  | { kind: "already_checked_in"; firstName: string; tier: string; tierLabel?: string }
+  | { kind: "checked_in"; firstName: string; tier: string; tierLabel?: string; qualifying: boolean; viewPass?: string }
+  | { kind: "already_checked_in"; firstName: string; tier: string; tierLabel?: string; viewPass?: string }
   | { kind: "not_found" }
   | { kind: "inactive" }
   | { kind: "invalid" }

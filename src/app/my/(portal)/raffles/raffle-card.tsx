@@ -53,7 +53,20 @@ function ResultPanel({ raffle }: { raffle: PortalRaffle }) {
 }
 
 /** One raffle: the release, when it closes, and the member's own Enter / Withdraw button. */
-export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: boolean }) {
+type EnterFn = (id: string, choices?: string[]) => Promise<ActionState>;
+
+export function RaffleCard({
+  raffle,
+  active,
+  onEnter = enterRaffleAction,
+  onWithdraw = withdrawRaffleAction,
+}: {
+  raffle: PortalRaffle;
+  active: boolean;
+  /** The kiosk passes its own actions (the member is checked in there, not signed in). */
+  onEnter?: EnterFn;
+  onWithdraw?: (id: string) => Promise<ActionState>;
+}) {
   const [result, setResult] = useState<ActionState>({});
   const [pending, startTransition] = useTransition();
   const [choices, setChoices] = useState<string[]>([]);
@@ -153,7 +166,7 @@ export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: b
             <ResultPanel raffle={raffle} />
           ) : raffle.entered ? (
             open || upcoming ? (
-              <Button variant="outline" size="lg" className="w-full" disabled={pending} onClick={() => run(withdrawRaffleAction)}>
+              <Button variant="outline" size="lg" className="w-full" disabled={pending} onClick={() => run(onWithdraw)}>
                 {pending ? "Working…" : "Withdraw my entry"}
               </Button>
             ) : (
@@ -182,7 +195,7 @@ export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: b
                   <Button variant="outline" size="lg" disabled={pending} onClick={() => { setPicking(false); setChoices([]); }}>
                     Cancel
                   </Button>
-                  <Button size="lg" variant="accent" disabled={pending || choices.length === 0} onClick={() => run(enterRaffleAction, choices)}>
+                  <Button size="lg" variant="accent" disabled={pending || choices.length === 0} onClick={() => run(onEnter, choices)}>
                     {pending ? "Entering…" : "Enter"}
                   </Button>
                 </div>
@@ -193,7 +206,7 @@ export function RaffleCard({ raffle, active }: { raffle: PortalRaffle; active: b
               </Button>
             )
           ) : open ? (
-            <Button size="lg" variant="accent" className="w-full text-base" disabled={pending} onClick={() => run(enterRaffleAction)}>
+            <Button size="lg" variant="accent" className="w-full text-base" disabled={pending} onClick={() => run(onEnter)}>
               {pending ? "Entering…" : "Enter the raffle"}
             </Button>
           ) : (

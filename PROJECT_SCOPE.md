@@ -649,6 +649,14 @@ During the current month, the staff app and the portal show:
 - The choice uses a one-time pass made by the database: it works once, within 2 minutes, at the same store, on the same kiosk. The sign-in is made by the server and is audit-logged ("employee.kiosk_sign_in").
 - A card alone checks anyone in (customer or employee) and never opens the dashboard. Customers: card, or PIN alone, checks them in. The member page `/my` still signs in by email only.
 
+### 11.4 One way in, and the member page on the kiosk ✅ (client request)
+
+- **The home page is the sign-in screen for everyone.** Someone already signed in goes straight to their own pages: staff → staff app, member → member page. Others choose **I'm a member** (email code) or **I work at Maximus** (email + password).
+- **The store tablet** (kiosk mode) never shows the home page; it opens the check-in kiosk. There a **card or PIN** is used, and **only there does a visit count**. Signing in on a phone or computer never counts a visit (owner decision: no tier points from home).
+- **After checking in at the kiosk, the member sees their own page on the kiosk**: name, member number, tier, progress, this month's spend and visit days, tier benefits, and raffles they can enter or withdraw from (with product ranking). **Never** their email, phone or purchases. **Done**, or 30 seconds without a touch, checks them out and the kiosk is ready for the next person.
+- The kiosk page works with a short-lived pass the database gives at check-in: 15 minutes, only on that kiosk session and store; it is stored only as a fingerprint.
+- Card or PIN alone are **not** accepted on phones or computers (owner decision, for safety: card numbers are printed on cards, and PINs could be guessed from anywhere).
+
 ---
 
 ## 12. Employee web app, administration, reporting and audit
@@ -1283,3 +1291,4 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 58 | PIN-only check-in | Card or PIN at the kiosk; every PIN unique ("taken" message accepted); 5 wrong PINs per tablet lock PIN entry for 5 minutes |
 | 59 | Staff at the kiosk | Employees get a member card (Owner links or creates it) and set a PIN on My PIN; their PIN at the kiosk lets them check in or open the staff dashboard; a card alone just checks in |
 | 60 | Card at the kiosk | A card scan checks the person in with no PIN; the PIN is for checking in without a card and for staff opening the dashboard |
+| 61 | One way in | Home page = sign-in for everyone; each role lands on its own pages; card/PIN only on the store tablet; only kiosk check-ins count as visits; the kiosk shows the member their own page (no email, phone or purchases) until Done or 30 seconds idle |
