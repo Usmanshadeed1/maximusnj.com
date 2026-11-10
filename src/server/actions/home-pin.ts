@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cleanMemberNumber } from "@/lib/kiosk";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -25,11 +26,12 @@ async function clientKey(): Promise<string> {
  * Home page: the PIN alone signs the person in (client decision). A customer goes to their
  * member page, an employee to the staff dashboard. Never records a visit.
  */
-export async function homePinSignInAction(pin: string): Promise<HomePinOutcome> {
+export async function homePinSignInAction(pin: string, memberNumber: string | null = null): Promise<HomePinOutcome> {
   if (!/^[0-9]{6,12}$/.test(String(pin))) return { error: "A PIN is 6 to 12 numbers." };
+  const card = memberNumber ? cleanMemberNumber(String(memberNumber)).slice(0, 20) : null;
 
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.rpc("web_pin_sign_in", { p_pin: pin, p_client_key: await clientKey() });
+  const { data, error } = await admin.rpc("web_pin_sign_in", { p_pin: pin, p_client_key: await clientKey(), p_member_number: card });
   if (error || !data) return { error: MESSAGES.error };
 
   switch (data.result) {
@@ -37,8 +39,8 @@ export async function homePinSignInAction(pin: string): Promise<HomePinOutcome> 
       return {
         error:
           data.attempts_left > 0
-            ? `We don't recognise that PIN. ${data.attempts_left} ${data.attempts_left === 1 ? "try" : "tries"} left.`
-            : "We don't recognise that PIN.",
+            ? `That PIN isn't right. ${data.attempts_left} ${data.attempts_left === 1 ? "try" : "tries"} left.`
+            : "That PIN isn't right.",
       };
     case "locked":
     case "pin_locked":

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(14);
+select plan(16);
 
 insert into auth.users (id, email, aud, role, email_confirmed_at) values
   ('00000000-0000-0000-0000-00000000bba1', 'staff18@test.local',  'authenticated', 'authenticated', now()),
@@ -37,6 +37,10 @@ select is(public.web_pin_sign_in('846201933', 'ip-a') ->> 'result', 'no_email', 
 select is(public.web_pin_sign_in('846201934', 'ip-a') ->> 'kind', 'staff', 'An employee''s PIN opens the staff side');
 select is(public.web_pin_sign_in('846201934', 'ip-a') ->> 'email', 'staff18@test.local', '... with the employee''s login');
 select is(public.web_pin_sign_in('846201935', 'ip-a') ->> 'result', 'inactive', 'An inactive member cannot sign in');
+
+-- Card + PIN
+select is(public.web_pin_sign_in('846201931', 'ip-d', 'hps000001') ->> 'result', 'ok', 'Card and its own PIN sign in');
+select is(public.web_pin_sign_in('846201932', 'ip-d', 'HPS000001') ->> 'result', 'pin_not_found', 'Another person''s PIN with this card is refused');
 
 -- Never a visit
 select is((select count(*)::int from public.visits), (select n from visits_before), 'Signing in at home never records a visit');

@@ -753,7 +753,7 @@ export type Database = {
       kiosk_member_enter_raffle: { Args: { p_token: string; p_location_id: string; p_raffle_id: string; p_choices?: string[] }; Returns: boolean };
       kiosk_member_withdraw: { Args: { p_token: string; p_location_id: string; p_raffle_id: string }; Returns: boolean };
       staff_set_customer_pin: { Args: { p_customer_id: string; p_pin: string }; Returns: boolean };
-      web_pin_sign_in: { Args: { p_pin: string; p_client_key: string }; Returns: WebPinSignInResult };
+      web_pin_sign_in: { Args: { p_pin: string; p_client_key: string; p_member_number?: string | null }; Returns: WebPinSignInResult };
       web_pin_link: { Args: { p_customer_id: string; p_user_id: string }; Returns: boolean };
       portal_link_account: { Args: Record<string, never>; Returns: { state: LinkState } };
       portal_locations: { Args: Record<string, never>; Returns: { id: string; name: string }[] };
