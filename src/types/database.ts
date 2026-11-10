@@ -753,6 +753,8 @@ export type Database = {
       kiosk_member_enter_raffle: { Args: { p_token: string; p_location_id: string; p_raffle_id: string; p_choices?: string[] }; Returns: boolean };
       kiosk_member_withdraw: { Args: { p_token: string; p_location_id: string; p_raffle_id: string }; Returns: boolean };
       staff_set_customer_pin: { Args: { p_customer_id: string; p_pin: string }; Returns: boolean };
+      web_pin_sign_in: { Args: { p_pin: string; p_client_key: string }; Returns: WebPinSignInResult };
+      web_pin_link: { Args: { p_customer_id: string; p_user_id: string }; Returns: boolean };
       portal_link_account: { Args: Record<string, never>; Returns: { state: LinkState } };
       portal_locations: { Args: Record<string, never>; Returns: { id: string; name: string }[] };
       portal_sign_up: {
@@ -844,3 +846,10 @@ export type Database = {
     CompositeTypes: { [_ in never]: never };
   };
 };
+
+/** What the home page PIN sign-in returns (server only). */
+export type WebPinSignInResult =
+  | { result: "ok"; kind: "member" | "staff"; email: string; customer_id: string }
+  | { result: "pin_not_found"; attempts_left: number }
+  | { result: "locked" | "pin_locked"; minutes_left: number }
+  | { result: "inactive" | "no_email" | "contact_store" };

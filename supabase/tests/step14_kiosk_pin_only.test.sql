@@ -63,14 +63,14 @@ select is((select r ->> 'result' from t where label = 'ok'), 'checked_in', 'Typi
 select is((select r ->> 'first_name' from t where label = 'ok'), 'Penny', 'and finds the right member');
 select is((select count(*)::int from public.visits where customer_id = '00000000-0000-0000-0000-000000000dd1'), 1, 'The visit is recorded');
 
-insert into t select 'w1', public.check_in_by_pin('111111', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
+insert into t select 'w1', public.check_in_by_pin('908172635401', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
 select is((select r ->> 'result' from t where label = 'w1'), 'pin_not_found', 'An unknown PIN is refused');
 select is((select r ->> 'attempts_left' from t where label = 'w1'), '4', 'and says how many tries are left on this tablet');
 select ok((select not (r ? 'first_name') from t where label = 'w1'), 'Nothing about anyone is shown');
-select public.check_in_by_pin('111112', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
-select public.check_in_by_pin('111113', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
-select public.check_in_by_pin('111114', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
-insert into t select 'w5', public.check_in_by_pin('111115', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
+select public.check_in_by_pin('908172635402', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
+select public.check_in_by_pin('908172635403', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
+select public.check_in_by_pin('908172635404', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
+insert into t select 'w5', public.check_in_by_pin('908172635405', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
 select is((select r ->> 'result' from t where label = 'w5'), 'kiosk_locked', 'Five wrong PINs in a row lock PIN entry on that tablet');
 insert into t select 'locked', public.check_in_by_pin('739205', '00000000-0000-0000-0000-000000000dc1', 'tablet-a');
 select is((select r ->> 'result' from t where label = 'locked'), 'kiosk_locked', 'Even a correct PIN waits while the tablet is locked');
