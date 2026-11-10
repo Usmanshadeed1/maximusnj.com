@@ -6,7 +6,7 @@ Version 2.0 · 2026-11-06
 ---
 
 > ### 📍 CURRENT STATUS
-> **Current step:** Step 12 — Final checks and launch (everything that can be built is built; what remains is on the owner's side: see the list in the checklist). Step 11 (old data) is paused until the client says whether the old site holds real customers. Steps 5 to 10 are built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
+> **Current step:** Step 12 — Final checks and launch (everything that can be built is built; what remains is on the owner's side: see the list in the checklist). Step 11 (old data) is **not needed**: there are no customers in the old system. The email sender (Resend or Gmail) is still to be chosen by the owner. Steps 5 to 10 are built and waiting for the owner's approval (the member-login and email tests wait for the email sender).
 > **Status:** Ready for owner to test (push to GitHub, Vercel deploys)
 > **Steps approved by owner:** 5 of 13 — Steps 0, 1, 2, 3, 4 (Step 1: Manager/Staff login tests deferred until email is set up)
 > **Live app (staging):** https://maximusnjcom.vercel.app
@@ -1277,7 +1277,7 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 52 | Net purchases | Purchases minus refunds; trades, membership payments and adjustments are not sales; voided entries ignored |
 | 53 | Migration safety | Import is a dry run unless --apply; one transaction; totals checked before saving; refuses to save on any mismatch; never duplicates on re-run. Built in Step 11 |
 | 54 | Migration scope | Customers, visits and transactions are imported with their ids and legacy member numbers; paid memberships, old audit log and login links are archived; staff are re-invited; tiers are recalculated afterwards |
-| 55 | Step 11 paused | The old-system move is skipped for now; it is needed only if the old members site holds real customers. The tools stay ready (`npm run migrate`) |
+| 55 | Step 11 not needed | The owner confirmed there are no customers in the old system, so nothing is moved. The import tools stay in the code (`npm run migrate`) in case they are ever needed |
 | 56 | Erasing a member | The Owner can download a member's data or erase their personal details (reason + typed member number); sales and visits stay under the member number |
 | 57 | Raffle products | Owner/Managers keep a product list; a raffle offers several; members rank the ones they want; staff assign a product to each person by hand after the draw (no automatic assignment, no prices) |
 | 58 | PIN-only check-in | Card or PIN at the kiosk; every PIN unique ("taken" message accepted); 5 wrong PINs per tablet lock PIN entry for 5 minutes |

@@ -38,7 +38,7 @@
   .title strong { display: block; }
   .title small { color: var(--muted); }
   .badge { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; white-space: nowrap; color: #fff; }
-  .b-not-started { background: var(--grey); } .b-in-progress { background: var(--amber); }
+  .b-not-started { background: var(--grey); } .b-not-needed { background: #64748b; } .b-in-progress { background: var(--amber); }
   .b-ready-to-test { background: var(--purple); } .b-approved { background: var(--green); }
   .body { padding: 0 16px 16px 68px; }
   .body h4 { margin: 4px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--blue); }
@@ -71,6 +71,7 @@
     <span class="badge b-in-progress">In progress</span>
     <span class="badge b-ready-to-test">Ready for you to test</span>
     <span class="badge b-approved">Approved ✓</span>
+    <span class="badge b-not-needed">Not needed</span>
   </div>
 
   <div id="steps"></div>
@@ -202,12 +203,10 @@ const STEPS = [
       "Sign in as a Manager: only their own stores appear in the filters and in every number.",
       "Open the Audit log and filter it by Raffles, by a person and by dates. Press Older entries. Open a member: Activity timeline and Raffle history are there."
     ] },
-  { n: 11, status: "not-started", name: "Move data from the old system",
-    goal: "Only needed if the old members site holds real customers. The tools are built and rehearsed; this step is paused until the client answers.",
+  { n: 11, status: "not-needed", name: "Move data from the old system",
+    goal: "Not needed: there are no customers in the old system (owner decision). The import tools stay in the code in case they are ever needed.",
     tests: [
-      "PAUSED. Ask the client: does the old members site (members.maximusnj.com) hold real customers, or only test data?",
-      "If only test data: this step is not needed.",
-      "If real customers: the old database's connection string goes into .env.local as LEGACY_DB_URL on your computer (never in chat). Then run the trial import and read the report."
+      "Nothing to test."
     ] },
   { n: 12, status: "in-progress", name: "Final checks and launch",
     goal: "The app is secure, backed up and live at members.maximusnj.com. Everything that can be built is built; the rest needs your accounts.",
@@ -223,15 +222,17 @@ const STEPS = [
 ];
 
 const LABELS = { "not-started": "Not started", "in-progress": "In progress",
-                 "ready-to-test": "Ready for you to test", "approved": "Approved ✓" };
+                 "ready-to-test": "Ready for you to test", "approved": "Approved ✓",
+                 "not-needed": "Not needed" };
 const KEY = "maximus-checklist-v1";
 let ticks = {};
 try { ticks = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { ticks = {}; }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(ticks)); } catch (e) {} }
 
-const approved = STEPS.filter(s => s.status === "approved").length;
-const current = STEPS.find(s => s.status !== "approved");
-document.getElementById("progressText").textContent = `${approved} of ${STEPS.length} steps approved`;
+const done = (s) => s.status === "approved" || s.status === "not-needed";
+const approved = STEPS.filter(done).length;
+const current = STEPS.find(s => !done(s));
+document.getElementById("progressText").textContent = `${approved} of ${STEPS.length} steps done`;
 document.getElementById("progressBar").style.width = (approved / STEPS.length * 100) + "%";
 document.getElementById("nowText").innerHTML = current
   ? `Current: <b>Step ${current.n} — ${current.name}</b> · ${LABELS[current.status]}`
