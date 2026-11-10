@@ -114,6 +114,12 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
           </div>
         </div>
       )}
+      {flags.pin === "ok" && <Notice>The customer&apos;s PIN is set.</Notice>}
+      {typeof flags.pin === "string" && flags.pin !== "ok" && (
+        <div role="alert" className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3.5 text-sm font-medium text-amber-900">
+          The member is registered, but their PIN wasn&apos;t saved: {flags.pin} Use Set PIN below to choose another.
+        </div>
+      )}
       {flags.saved === "1" && <Notice>Changes saved.</Notice>}
       {flags.merged === "1" && <Notice>Duplicate merged into this member.</Notice>}
       {flags.recorded === "1" && <Notice>Transaction recorded.</Notice>}

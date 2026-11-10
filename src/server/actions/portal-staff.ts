@@ -55,3 +55,16 @@ export async function unlinkLoginAction(_prev: ActionState, formData: FormData):
     "Online login removed.",
   );
 }
+
+/** Any employee: save the PIN the customer just chose on the number pad. Never logged. */
+export async function setCustomerPinAction(customerId: string, pin: string): Promise<ActionState> {
+  await requireEmployee();
+  const id = staffReasonSchema.shape.customerId.safeParse(customerId);
+  if (!id.success || !/^[0-9]{6,12}$/.test(String(pin))) return { error: "A PIN must be 6 to 12 numbers." };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("staff_set_customer_pin", { p_customer_id: id.data, p_pin: pin });
+  if (error) return { error: friendlyDbError(error) };
+  revalidatePath(`/staff/customers/${id.data}`);
+  return { ok: true, message: "PIN saved." };
+}

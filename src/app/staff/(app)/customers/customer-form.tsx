@@ -6,6 +6,7 @@ import { AlertTriangle, ExternalLink } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckboxField, Field, FormMessage, Input, Select, SubmitButton } from "@/components/ui/form";
+import { PinCapture } from "@/components/ui/pin-capture";
 import { formatPhone } from "@/lib/phone";
 import {
   type CustomerFormState,
@@ -52,6 +53,7 @@ export function CustomerForm({
     {},
   );
   const [v, setV] = useState(initial);
+  const [pin, setPin] = useState("");
   const set = <K extends keyof CustomerFormValues>(key: K, value: CustomerFormValues[K]) =>
     setV((prev) => ({ ...prev, [key]: value }));
   const errors = state.fieldErrors ?? {};
@@ -207,6 +209,16 @@ export function CustomerForm({
           </p>
         )}
       </Card>
+
+      {mode === "create" && (
+        <Card className="p-5 sm:p-6">
+          <SectionTitle
+            title="Check-in PIN (optional)"
+            description="Turn the screen to the customer so they can choose their PIN. They can then check in at the kiosk without their card."
+          />
+          <PinCapture name="pin" value={pin} onChange={setPin} />
+        </Card>
+      )}
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Link href={cancelHref} className={buttonVariants({ variant: "outline", size: "lg" })}>

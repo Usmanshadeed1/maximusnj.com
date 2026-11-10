@@ -1292,3 +1292,4 @@ Nothing is guessed: a row with an unknown type, a bad or duplicate member number
 | 59 | Staff at the kiosk | Employees get a member card (Owner links or creates it) and set a PIN on My PIN; their PIN at the kiosk lets them check in or open the staff dashboard; a card alone just checks in |
 | 60 | Card at the kiosk | A card scan checks the person in with no PIN; the PIN is for checking in without a card and for staff opening the dashboard |
 | 61 | One way in | Home page = sign-in for everyone; each role lands on its own pages; card/PIN only on the store tablet; only kiosk check-ins count as visits; the kiosk shows the member their own page (no email, phone or purchases) until Done or 30 seconds idle |
+| 62 | Staff set a customer's PIN | Any employee can set or change a customer's PIN when registering them (optional step) or on their profile; the customer types it on the number pad, twice; unique; never logged |

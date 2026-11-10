@@ -45,8 +45,19 @@ export async function registerCustomerAction(
   });
   if (error || !customer) return { error: friendlyDbError(error) };
 
+  // The PIN the customer chose on the number pad (optional). If it can't be used (for example
+  // someone already has it), the member is still registered and the profile says so.
+  const pin = String(formData.get("pin") ?? "");
+  let pinNote = "";
+  if (pin) {
+    const { error: pinError } = /^[0-9]{6,12}$/.test(pin)
+      ? await supabase.rpc("staff_set_customer_pin", { p_customer_id: customer.id, p_pin: pin })
+      : { error: { message: "pin_invalid" } };
+    pinNote = pinError ? `&pin=${encodeURIComponent(friendlyDbError(pinError))}` : "&pin=ok";
+  }
+
   revalidatePath("/staff/customers");
-  redirect(`/staff/customers/${customer.id}?new=1`);
+  redirect(`/staff/customers/${customer.id}?new=1${pinNote}`);
 }
 
 export async function updateCustomerAction(

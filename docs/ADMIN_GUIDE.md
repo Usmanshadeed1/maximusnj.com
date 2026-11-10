@@ -23,7 +23,9 @@ Staff app: **members.maximusnj.com/staff** · Member page: **members.maximusnj.c
 
 **Sign in** at /staff, then choose your store (top bar). On a shared computer, always press *Sign out*.
 
-**Register a new customer:** Customers → *Register customer*. Fill in the name and mobile phone. The app warns if the person may already be a member. A member number (MAX…) is created for you. Press *Print card*.
+**Register a new customer:** Customers → *Register customer*. Fill in the name and mobile phone. The app warns if the person may already be a member. A member number (MAX…) is created for you. Optionally, at the bottom, turn the screen to the customer and let them **choose a PIN** (they type it twice). Press *Print card*.
+
+**Set or change a customer's PIN later:** open their profile → *Online account and PIN* → **Set PIN** / **Change PIN**, and let the customer type it.
 
 **Check-in kiosk:** open *Check-in kiosk* on the entrance tablet and press *Start kiosk mode*. Members scan their card, or press **Check in with my PIN** and type their PIN on the number pad (no card needed). Five wrong PINs in a row lock PIN entry on that tablet for 5 minutes. The kiosk locks after 10 minutes without use; any staff member unlocks it with their own email and password.
 

@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { KeyRound, Link2, Link2Off } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, useDialog } from "@/components/ui/dialog";
 import { Field, FormMessage, Input, SubmitButton } from "@/components/ui/form";
-import { idleState } from "@/lib/action-result";
-import { linkLoginAction, resetPinAction, unlinkLoginAction } from "@/server/actions/portal-staff";
+import { PinCapture } from "@/components/ui/pin-capture";
+import { type ActionState, idleState } from "@/lib/action-result";
+import { linkLoginAction, resetPinAction, setCustomerPinAction, unlinkLoginAction } from "@/server/actions/portal-staff";
 
 /** Owner/Manager: the member forgot their PIN. This removes it; they choose a new one in the member page. */
 export function ResetPinDialog({ customerId, name }: { customerId: string; name: string }) {
@@ -109,5 +110,54 @@ function ReasonForm({
         <SubmitButton variant={destructive ? "destructive" : "default"}>{submitLabel}</SubmitButton>
       </div>
     </form>
+  );
+}
+
+/** Any staff member: the customer chooses (or changes) their PIN on the number pad. */
+export function SetCustomerPinDialog({ customerId, name, hasPin }: { customerId: string; name: string; hasPin: boolean }) {
+  return (
+    <Dialog
+      title={hasPin ? `Change ${name}'s PIN` : `Set ${name}'s PIN`}
+      description="Turn the screen to the customer. They type a PIN of 6 to 12 numbers, twice."
+      trigger={(open) => (
+        <Button variant="outline" onClick={open}>
+          <KeyRound aria-hidden /> {hasPin ? "Change PIN" : "Set PIN"}
+        </Button>
+      )}
+    >
+      <SetPinForm customerId={customerId} />
+    </Dialog>
+  );
+}
+
+function SetPinForm({ customerId }: { customerId: string }) {
+  const [pin, setPin] = useState("");
+  const [result, setResult] = useState<ActionState>({});
+  const [pending, startTransition] = useTransition();
+  const { close } = useDialog();
+
+  return (
+    <div className="flex flex-col gap-4">
+      <FormMessage state={result} />
+      <PinCapture value={pin} onChange={setPin} startLabel="Customer: choose your PIN" />
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={close}>
+          Cancel
+        </Button>
+        <Button
+          disabled={!pin || pending}
+          onClick={() =>
+            startTransition(async () => {
+              const outcome = await setCustomerPinAction(customerId, pin);
+              setResult(outcome);
+              if (outcome.ok) close();
+              else setPin("");
+            })
+          }
+        >
+          {pending ? "Saving…" : "Save PIN"}
+        </Button>
+      </div>
+    </div>
   );
 }
