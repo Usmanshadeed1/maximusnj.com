@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Gift, PartyPopper, ShieldAlert } from "lucide-react";
 import { ActivityList, PortalMemberCard, mergeActivity } from "@/components/portal/portal-parts";
 import { TierSummary } from "@/components/portal/tier-summary";
+import { GiftCardBalances } from "@/components/portal/gift-card-balances";
 import { Card } from "@/components/ui/card";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMemberAccess } from "@/server/portal";
 
 export const metadata: Metadata = { title: "My membership" };
@@ -14,6 +16,8 @@ export default async function MemberHomePage({ searchParams }: PageProps<"/my">)
   if (access.status !== "member") redirect("/login");
   const { data } = access;
   const recent = mergeActivity(data).slice(0, 5);
+  const supabase = await createSupabaseServerClient();
+  const { data: giftCards } = await supabase.rpc("portal_gift_cards");
 
   return (
     <div className="flex flex-col gap-5">
@@ -42,6 +46,8 @@ export default async function MemberHomePage({ searchParams }: PageProps<"/my">)
       <PortalMemberCard data={data} />
 
       <TierSummary data={data} />
+
+      <GiftCardBalances cards={giftCards ?? []} />
 
       {data.tier.benefits && (
         <Card className="p-5 sm:p-6">

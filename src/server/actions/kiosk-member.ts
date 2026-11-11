@@ -1,5 +1,6 @@
 "use server";
 
+import type { MemberGiftCard } from "@/types/database";
 import { z } from "zod";
 import type { ActionState } from "@/lib/action-result";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -20,6 +21,7 @@ export type KioskMemberView = {
   names: Record<TierKey, string>;
   projection: ProjectionView;
   raffles: PortalRaffle[];
+  giftCards: MemberGiftCard[];
 };
 
 const MESSAGES: Record<string, string> = {
@@ -55,6 +57,7 @@ export async function kioskMemberViewAction(pass: string): Promise<KioskMemberVi
     benefits: benefits[data.tier],
     names: rules.names,
     projection: toProjectionView(data.projection),
+    giftCards: data.gift_cards ?? [],
     raffles: (data.raffles ?? []).map((r) => ({
       id: r.raffle_id,
       name: r.release.name,

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock, Gift, Info, Loader2, LogOut, Sparkles, Ticket, Trophy } from "lucide-react";
 import { MemberCard } from "@/components/customers/member-card";
+import { GiftCardBalances } from "@/components/portal/gift-card-balances";
 import { RaffleCard } from "@/app/my/(portal)/raffles/raffle-card";
 import { TierBadge } from "@/components/tier-badge";
 import { TierProgress } from "@/components/tier-progress";
@@ -111,6 +112,7 @@ export function KioskMemberPage({
           ) : (
             <>
               <MemberSummary view={view} />
+            <GiftCardBalances cards={view.giftCards} className="mt-5" />
               <section aria-labelledby="kiosk-raffles" className="flex flex-col gap-4">
                 <h2 id="kiosk-raffles" className="flex items-center gap-2 text-xl font-bold text-brand-navy-deep">
                   <Ticket aria-hidden className="size-6 text-brand-blue" /> Raffles

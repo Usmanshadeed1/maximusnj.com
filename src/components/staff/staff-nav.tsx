@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { History, IdCard, KeyRound, LayoutDashboard, Package, Menu, BarChart3, Receipt, RefreshCw, ScanLine, SlidersHorizontal, Store, Ticket, Users, X } from "lucide-react";
+import { Gift, History, IdCard, KeyRound, LayoutDashboard, Package, Menu, BarChart3, Receipt, RefreshCw, ScanLine, SlidersHorizontal, Store, Ticket, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type NavKey = "dashboard" | "customers" | "transactions" | "raffles" | "products" | "reports" | "kiosk" | "stores" | "employees" | "tiers" | "monthly" | "audit" | "mypin";
+export type NavKey = "dashboard" | "customers" | "transactions" | "giftcards" | "raffles" | "products" | "reports" | "kiosk" | "stores" | "employees" | "tiers" | "monthly" | "audit" | "mypin";
 
 const ITEMS: Record<NavKey, { href: string; label: string; icon: typeof Store }> = {
   dashboard: { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
   customers: { href: "/staff/customers", label: "Customers", icon: IdCard },
   transactions: { href: "/staff/transactions/new", label: "Record transaction", icon: Receipt },
+  giftcards: { href: "/staff/gift-cards", label: "Gift cards", icon: Gift },
   raffles: { href: "/staff/raffles", label: "Raffles", icon: Ticket },
   products: { href: "/staff/products", label: "Products", icon: Package },
   reports: { href: "/staff/reports", label: "Reports", icon: BarChart3 },

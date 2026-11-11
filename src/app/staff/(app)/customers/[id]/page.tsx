@@ -8,7 +8,7 @@ import { TierBadge } from "@/components/tier-badge";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatBusinessDate, formatBusinessDateTime, formatMonthYear } from "@/lib/format";
+import { formatBusinessDate, formatBusinessDateTime, formatMonthYear, formatCents } from "@/lib/format";
 import { addMonths, nyMonthStartString } from "@/lib/timezone";
 import {
   canChangeCustomerStatus,
@@ -30,6 +30,7 @@ import { MergeCustomerDialog, StatusDialog } from "./customer-actions";
 import { PrivacyActions } from "./privacy-dialog";
 import { ActivityTimelineCard, RaffleHistoryCard } from "./history-cards";
 import { PortalAccessCard } from "./portal-access-card";
+import { getMemberGiftCards } from "@/server/gift-cards";
 import { SpendingCard, TransactionsCard } from "./spending-cards";
 import { MonthlyTiersCard } from "./monthly-tiers-card";
 import { TierCard } from "./tier-card";
@@ -41,7 +42,7 @@ const SOURCE_LABELS = { staff: "In store", online: "Online sign-up", migration: 
 export default async function CustomerPage({ params, searchParams }: PageProps<"/staff/customers/[id]">) {
   const employee = await requireEmployee();
   const [{ id }, flags] = await Promise.all([params, searchParams]);
-  const [customer, visits, spend, transactions, tierView, awards, testTools, portalStatus, raffles] = await Promise.all([
+  const [customer, visits, spend, transactions, tierView, awards, testTools, portalStatus, raffles, giftCards] = await Promise.all([
     getCustomer(id),
     getVisitSummary(id),
     getSpend(id),
@@ -51,6 +52,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
     canManageTiers(employee.role) ? isTestToolsEnabled() : Promise.resolve(false),
     getPortalStatus(id),
     getMemberRaffles(id),
+    getMemberGiftCards(id),
   ]);
   if (!customer) notFound();
 
@@ -314,6 +316,23 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
               <Printer aria-hidden /> Print this card
             </Link>
           )}
+          <Card className="mt-3 p-5">
+            <h2 className="text-base font-bold text-brand-navy-deep">Gift cards</h2>
+            {giftCards.length === 0 ? (
+              <p className="mt-1 text-sm text-muted-foreground">None connected to this member.</p>
+            ) : (
+              <ul className="mt-3 divide-y rounded-lg border">
+                {giftCards.map((g) => (
+                  <li key={g.id}>
+                    <Link href={`/staff/gift-cards/${g.id}`} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm hover:bg-muted/50">
+                      <span className="font-mono font-semibold">{g.code}</span>
+                      <span className="font-bold tabular-nums">{g.active ? formatCents(g.balanceCents) : "Off"}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
         </aside>
       </div>
     </>

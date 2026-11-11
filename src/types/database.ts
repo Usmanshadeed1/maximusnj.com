@@ -445,6 +445,35 @@ export type ProductRow = {
   updated_at: string;
 };
 
+export type GiftCardRow = {
+  id: string;
+  code: string;
+  customer_id: string | null;
+  balance_cents: number;
+  is_active: boolean;
+  issued_location_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GiftCardEntryRow = {
+  id: string;
+  gift_card_id: string;
+  kind: "sold" | "added" | "spent" | "fixed" | "turned_off" | "turned_on";
+  amount_cents: number;
+  balance_after_cents: number;
+  location_id: string | null;
+  employee_id: string | null;
+  paid_by_customer_id: string | null;
+  transaction_id: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+/** What a member sees about their gift cards. */
+export type MemberGiftCard = { code: string; balance_cents: number; active: boolean };
+
 export type RaffleProductRow = { raffle_id: string; product_id: string; position: number };
 export type RaffleEntryChoiceRow = { entry_id: string; rank: number; product_id: string };
 
@@ -536,6 +565,7 @@ export type KioskMemberViewJson = {
   rules: Omit<TierRuleSetJson, "created_by">;
   projection: Omit<TierProjectionJson, "rules"> & { rules: Omit<TierRuleSetJson, "created_by"> };
   raffles: PortalRaffleJson[] | null;
+  gift_cards: MemberGiftCard[] | null;
 };
 
 type RaffleSetupArgs = {
@@ -589,6 +619,8 @@ export type Database = {
       products: ReadOnlyTable<ProductRow>;
       raffle_products: ReadOnlyTable<RaffleProductRow>;
       raffle_entry_choices: ReadOnlyTable<RaffleEntryChoiceRow>;
+      gift_cards: ReadOnlyTable<GiftCardRow>;
+      gift_card_entries: ReadOnlyTable<GiftCardEntryRow>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -810,6 +842,19 @@ export type Database = {
         Returns: RaffleSummaryRow[];
       };
       pick_raffle_person: { Args: { p_result_id: string }; Returns: unknown };
+      gift_card_sell: {
+        Args: { p_code: string | null; p_amount_cents: number; p_location_id: string; p_paid_by_member?: string | null; p_holder_member?: string | null; p_note?: string | null };
+        Returns: GiftCardRow;
+      };
+      gift_card_add: {
+        Args: { p_card_id: string; p_amount_cents: number; p_location_id: string; p_paid_by_member?: string | null; p_note?: string | null };
+        Returns: GiftCardRow;
+      };
+      gift_card_spend: { Args: { p_card_id: string; p_amount_cents: number; p_location_id: string; p_note?: string | null }; Returns: GiftCardRow };
+      gift_card_fix: { Args: { p_card_id: string; p_new_balance_cents: number; p_location_id: string; p_reason: string }; Returns: GiftCardRow };
+      gift_card_set_active: { Args: { p_card_id: string; p_active: boolean; p_location_id: string; p_reason?: string | null }; Returns: GiftCardRow };
+      gift_card_set_member: { Args: { p_card_id: string; p_member_number: string }; Returns: GiftCardRow };
+      portal_gift_cards: { Args: Record<string, never>; Returns: MemberGiftCard[] };
       close_raffle_entries: { Args: { p_raffle_id: string }; Returns: unknown };
       draw_raffle: { Args: { p_raffle_id: string }; Returns: { entrants: number; winners: number } };
       notify_winners: {
