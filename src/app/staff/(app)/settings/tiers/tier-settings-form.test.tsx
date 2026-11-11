@@ -27,7 +27,7 @@ const render = (values = initial) => renderToStaticMarkup(<TierSettingsForm init
 describe("TierSettingsForm", () => {
   it("is laid out in numbered, plainly named sections", () => {
     const html = render();
-    for (const heading of ["Your tiers", "Do store visits count?", "Extra rules", "Try it out", "Advanced options"]) {
+    for (const heading of ["Your tiers", "Do store visits count?", "Extra rules", "Advanced options"]) {
       expect(html).toContain(heading);
     }
   });
@@ -37,7 +37,7 @@ describe("TierSettingsForm", () => {
     expect(html).toContain('value="300.00"');
     expect(html).toContain('value="600.00"');
     expect(html).toContain('value="1000.00"');
-    expect(html).toContain("5% off");
+    expect(html).not.toContain("What members get"); // no benefits box any more
   });
 
   it("starts with nothing to save", () => {
@@ -69,12 +69,8 @@ describe("TierSettingsForm", () => {
     expect(html).toContain("4 visit days add $80.00");
   });
 
-  it("includes a working 'Try it out' example", () => {
-    const html = render();
-    // $540 and 4 visit days is Silver under the launch rules.
-    expect(html).toContain("They would earn");
-    expect(html).toContain("Silver");
-    expect(html).toContain("To reach");
+  it("has no 'Try it out' box", () => {
+    expect(render()).not.toContain("Try it out");
   });
 
   it("folds the look-back choices into Advanced options, with a plain summary", () => {

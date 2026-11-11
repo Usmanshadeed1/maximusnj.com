@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, ListChecks, Wrench } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Clock, Wrench } from "lucide-react";
 import { RecalculateDialog } from "@/components/tiers/recalculate-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import { requireEmployee } from "@/server/auth";
 import { type RunView, getRolloverOverview } from "@/server/tier-awards";
 import { getTierLabels } from "@/server/tiers";
 import { RunNowPanel } from "./run-now-panel";
-import { TestToolsCard } from "./test-tools-card";
 
 export const metadata: Metadata = { title: "Monthly update" };
 
@@ -33,10 +32,6 @@ export default async function MonthlyUpdatePage() {
       const value = addMonths(overview.month, -i);
       return { value, label: `${formatMonthYear(value)}${i === 0 ? " (this month)" : ""}` };
     }),
-  ];
-  const testOptions = [
-    { value: overview.nextMonth, label: `${nextLabel} — what the 1st of next month will do (uses ${monthLabel}'s activity)` },
-    { value: overview.month, label: `${monthLabel} — this month (uses last month's activity)` },
   ];
 
   return (
@@ -149,33 +144,6 @@ export default async function MonthlyUpdatePage() {
             buttonLabel="Recalculate everyone…"
             variant="secondary"
           />
-        </Card>
-
-        {overview.testToolsEnabled && <TestToolsCard options={testOptions} />}
-
-        {/* How it works */}
-        <Card className="p-5 sm:p-6">
-          <div className="mb-4 flex items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-brand-blue">
-              <ListChecks aria-hidden className="size-5" />
-            </span>
-            <h2 className="pt-1.5 text-base font-bold text-brand-navy-deep">How it works</h2>
-          </div>
-          <ol className="flex list-decimal flex-col gap-2 pl-6 text-[15px]">
-            <li>
-              On the <strong>1st of every month at 12:05 AM</strong> (New York time) the app looks at what each member
-              spent and how often they visited <strong>last month</strong>.
-            </li>
-            <li>
-              It uses your <strong>Tier settings</strong> to decide their tier. That tier is theirs for the whole new
-              month. <strong>{monthLabel}</strong> activity decides <strong>{nextLabel}</strong>.
-            </li>
-            <li>
-              Members with no activity go back to the starting tier. New members start there too, until their first
-              update.
-            </li>
-            <li>If anything goes wrong, you&apos;ll see a red message here and on the dashboard, and the app tries again every hour.</li>
-          </ol>
         </Card>
       </div>
     </div>

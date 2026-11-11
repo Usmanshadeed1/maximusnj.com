@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, ScanLine, ShoppingBag, Undo2 } from "lucide-react";
+import { AlertTriangle, Receipt, ScanLine, ShoppingBag, Undo2 } from "lucide-react";
 import { BarChart } from "@/components/reports/bar-chart";
 import { FilterBar, Kpi } from "@/components/reports/filter-bar";
 import { buttonVariants } from "@/components/ui/button";
@@ -40,6 +40,11 @@ export default async function StaffDashboardPage({ searchParams }: PageProps<"/s
       <PageHeader
         title={`Welcome, ${employee.firstName}`}
         description={`${ROLE_LABELS[employee.role]} · ${formatCalendarDate(filters.from)} to ${formatCalendarDate(filters.to)} · ${storeName ?? "your stores"}`}
+        actions={
+          <Link href="/staff/transactions/new" className={buttonVariants({ size: "lg" })}>
+            <Receipt aria-hidden /> Record transaction
+          </Link>
+        }
       />
 
       {failedUpdate && (

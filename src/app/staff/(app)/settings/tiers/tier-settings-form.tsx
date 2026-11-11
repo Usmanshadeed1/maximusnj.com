@@ -1,15 +1,15 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useMemo, useState } from "react";
-import { ArrowRight, ChevronDown, FlaskConical, Info, RotateCcw, Save } from "lucide-react";
+import { startTransition, useActionState, useEffect, useState } from "react";
+import { ArrowRight, ChevronDown, RotateCcw, Save } from "lucide-react";
 import { TierBadge } from "@/components/tier-badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckboxField, Field, FormMessage, Input, SubmitButton, Textarea } from "@/components/ui/form";
+import { CheckboxField, Field, FormMessage, Input, SubmitButton } from "@/components/ui/form";
 import { idleState } from "@/lib/action-result";
 import { formatCents } from "@/lib/format";
 import { parseMoneyToCents } from "@/lib/money";
-import { type TierKey, type TierRules, calculateTier, progressToNextTier } from "@/lib/tier/engine";
+import type { TierKey } from "@/lib/tier/engine";
 import { comparableFormValues } from "@/lib/tier/form-values";
 import { cn } from "@/lib/utils";
 import type { TierSettingsValues } from "@/lib/validation/tier";
@@ -163,8 +163,6 @@ export function TierSettingsForm({ initial, startsOn }: Props) {
           />
         </div>
       </Section>
-
-      <TryIt values={values} />
 
       {/* Advanced */}
       <details
@@ -428,146 +426,8 @@ function TierRow({
           </Field>
         )}
       </div>
-      <Field
-        label="What members get (optional)"
-        htmlFor={benefitsKey}
-        error={errors[benefitsKey]}
-        hint="Shown to members in the customer portal, for example “5% off every purchase”."
-      >
-        <Textarea
-          id={benefitsKey}
-          name={benefitsKey}
-          rows={2}
-          maxLength={500}
-          value={values[benefitsKey]}
-          onChange={(e) => onChange(benefitsKey, e.target.value)}
-        />
-      </Field>
-    </div>
-  );
-}
-
-/** Type some activity and see which tier it would earn under the settings above — before saving anything. */
-function TryIt({ values }: { values: TierSettingsValues }) {
-  const [spend, setSpend] = useState("540");
-  const [visits, setVisits] = useState("4");
-
-  const outcome = useMemo(() => {
-    const visitValue = parseMoneyToCents(values.visitValue, { allowZero: true });
-    const silver = parseMoneyToCents(values.threshold_silver);
-    const gold = parseMoneyToCents(values.threshold_gold);
-    const diamond = parseMoneyToCents(values.threshold_diamond);
-    const months = Number(values.lookbackMonths);
-    const spendCents = parseMoneyToCents(spend, { allowZero: true });
-    const visitCount = Number(visits);
-
-    if (!visitValue.ok || !silver.ok || !gold.ok || !diamond.ok) return { error: "Fix the amounts above to try it." };
-    if (!(silver.cents < gold.cents && gold.cents < diamond.cents)) return { error: "Each tier must need more than the one below it." };
-    if (!Number.isInteger(months) || months < 1 || months > 24) return { error: "Set the months to look back (1 to 24) in Advanced options." };
-    if (!spendCents.ok) return { error: "Enter an amount spent, like 540." };
-    if (!/^\d{1,3}$/.test(visits.trim())) return { error: "Enter a number of visit days, like 4." };
-
-    const rules: TierRules = {
-      visitValueCents: visitValue.cents,
-      lookbackMonths: months,
-      method: values.method === "every_month" ? "every_month" : "average",
-      carryOver: values.carryOver && months === 1,
-      requirePurchase: values.requirePurchase,
-      requireVisit: values.requireVisit,
-      thresholds: { silver: silver.cents, gold: gold.cents, diamond: diamond.cents },
-    };
-    const activity = Array.from({ length: months }, () => ({ spendCents: spendCents.cents, visits: visitCount }));
-    return {
-      rules,
-      months,
-      spendCents: spendCents.cents,
-      visitCount,
-      result: calculateTier(activity, rules),
-      progress: progressToNextTier(activity, rules),
-    };
-  }, [values, spend, visits]);
-
-  return (
-    <Card className="border-brand-blue/30 bg-secondary/30 p-5 sm:p-6">
-      <div className="mb-4 flex items-start gap-3.5">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-white text-brand-blue shadow-sm">
-          <FlaskConical aria-hidden className="size-5" />
-        </span>
-        <div>
-          <h2 className="text-lg font-bold text-brand-navy-deep">Try it out</h2>
-          <p className="mt-0.5 text-[15px] text-muted-foreground">
-            Type what a member spent and how many days they visited in a month. We&apos;ll show which tier that earns
-            with the settings above. Nothing is saved.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Money spent in a month" htmlFor="try-spend">
-          <MoneyInput id="try-spend" name="try-spend" value={spend} onChange={setSpend} />
-        </Field>
-        <Field label="Days visited in a month" htmlFor="try-visits">
-          <Input id="try-visits" inputMode="numeric" value={visits} onChange={(e) => setVisits(e.target.value)} autoComplete="off" />
-        </Field>
-      </div>
-
-      <div aria-live="polite" className="mt-5 rounded-xl border bg-white p-4 sm:p-5">
-        {"error" in outcome ? (
-          <p className="flex items-center gap-2 text-[15px] text-muted-foreground">
-            <Info aria-hidden className="size-4 shrink-0" /> {outcome.error}
-          </p>
-        ) : (
-          <TryItResult values={values} outcome={outcome} />
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function TryItResult({
-  values,
-  outcome,
-}: {
-  values: TierSettingsValues;
-  outcome: {
-    rules: TierRules;
-    months: number;
-    spendCents: number;
-    visitCount: number;
-    result: ReturnType<typeof calculateTier>;
-    progress: ReturnType<typeof progressToNextTier>;
-  };
-}) {
-  const { rules, months, spendCents, visitCount, result, progress } = outcome;
-  const name = (key: TierKey) => values[`name_${key}` as const].trim() || key;
-  const monthlyPoints = spendCents + visitCount * rules.visitValueCents;
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-base">They would earn</span>
-        <TierBadge tier={result.tier} label={name(result.tier)} className="px-4 py-1.5 text-sm" />
-      </div>
-      <p className="text-[15px] text-muted-foreground">
-        {formatCents(spendCents)} spent
-        {rules.visitValueCents > 0
-          ? ` + ${visitCount} ${visitCount === 1 ? "visit day" : "visit days"} × ${formatCents(rules.visitValueCents)}`
-          : ""}{" "}
-        = <strong className="text-foreground">{formatCents(monthlyPoints)}</strong> points
-        {months > 1 ? ` a month, every month for ${months} months` : ""}.
-      </p>
-      {!result.requirementsMet && (
-        <p className="text-[15px] font-medium text-amber-800">
-          The points are there, but an extra rule isn&apos;t met (a purchase and/or a visit), so they stay at {name("base")}.
-        </p>
-      )}
-      {progress.nextTier && progress.missingCents !== null && result.requirementsMet && (
-        <p className="text-[15px] text-muted-foreground">
-          To reach <strong className="text-foreground">{name(progress.nextTier)}</strong> they&apos;d need {formatCents(progress.missingCents)} more
-          {progress.extraVisits !== null ? ` (about ${progress.extraVisits} more ${progress.extraVisits === 1 ? "visit day" : "visit days"})` : ""}.
-        </p>
-      )}
-      {!progress.nextTier && result.requirementsMet && <p className="text-[15px] text-muted-foreground">That&apos;s the top tier.</p>}
+      {/* No "what members get" text (client decision): always saved empty. */}
+      <input type="hidden" name={benefitsKey} value="" />
     </div>
   );
 }
