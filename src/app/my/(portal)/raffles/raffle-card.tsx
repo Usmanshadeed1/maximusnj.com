@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, CheckCircle2, Clock, Frown, Hourglass, ImageIcon, MapPin, PartyPopper, PackageCheck, Trophy } from "lucide-react";
+import { CalendarClock, CheckCircle2, Clock, Frown, Hourglass, ImageIcon, MapPin, PartyPopper, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChoicePicker } from "@/components/raffles/choice-picker";
 import { FormMessage } from "@/components/ui/form";
@@ -34,7 +34,7 @@ function ResultPanel({ raffle }: { raffle: PortalRaffle }) {
     );
   }
   const plain: Record<string, { icon: typeof Hourglass; text: string; tone: string }> = {
-    waiting: { icon: Hourglass, text: "The draw is done. We'll contact the winners soon. Keep an eye on this page.", tone: "bg-secondary/70" },
+    waiting: { icon: Hourglass, text: "The draw is done. We'll contact you if you're picked. Keep an eye on this page.", tone: "bg-secondary/70" },
     collected: { icon: PackageCheck, text: "You collected your prize. Enjoy!", tone: "bg-success/12 text-success" },
     expired: { icon: Frown, text: "The time to collect ended, so your spot went to someone else.", tone: "bg-muted" },
     declined: { icon: Frown, text: "You passed on this spot. Thanks for letting us know.", tone: "bg-muted" },
@@ -115,13 +115,6 @@ export function RaffleCard({
         {raffle.description && <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-muted-foreground">{raffle.description}</p>}
 
         <dl className="mt-4 grid gap-2.5 text-sm">
-          <div className="flex items-center gap-2.5">
-            <Trophy aria-hidden className="size-4 shrink-0 text-brand-blue" />
-            <dt className="sr-only">Winners</dt>
-            <dd>
-              <strong>{raffle.winners}</strong> {raffle.winners === 1 ? "winner" : "winners"}
-            </dd>
-          </div>
           <div className="flex items-center gap-2.5">
             {upcoming ? <CalendarClock aria-hidden className="size-4 shrink-0 text-brand-blue" /> : <Clock aria-hidden className="size-4 shrink-0 text-brand-blue" />}
             <dt className="sr-only">{upcoming ? "Opens" : "Closes"}</dt>

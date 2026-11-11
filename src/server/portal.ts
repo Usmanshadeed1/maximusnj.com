@@ -120,7 +120,7 @@ export type PortalRaffle = {
   store: string | null;
   pickup: string | null;
   pickupRule: RafflePickupRule;
-  winners: number;
+  winners: number | null;
   opensAt: string;
   closesAt: string;
   phase: PortalRaffleJson["phase"];

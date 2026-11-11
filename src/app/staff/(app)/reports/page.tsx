@@ -197,7 +197,6 @@ export default async function ReportsPage({ searchParams }: PageProps<"/staff/re
                 <Th>Closed</Th>
                 <Th className="text-right">Entries</Th>
                 <Th className="text-right">Online / store</Th>
-                <Th className="text-right">Winners</Th>
                 <Th className="text-right">Collected</Th>
                 <Th className="text-right">Expired</Th>
                 <Th className="text-right">Declined</Th>
@@ -220,7 +219,6 @@ export default async function ReportsPage({ searchParams }: PageProps<"/staff/re
                   <Td className="text-right tabular-nums">
                     {r.online} / {r.in_store}
                   </Td>
-                  <Td className="text-right tabular-nums">{r.winner_count}</Td>
                   <Td className="text-right tabular-nums text-success">{r.claimed}</Td>
                   <Td className="text-right tabular-nums">{r.expired}</Td>
                   <Td className="text-right tabular-nums">{r.declined}</Td>

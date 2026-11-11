@@ -69,11 +69,11 @@ export async function drawRaffleAction(formData: FormData): Promise<void> {
   revalidatePath(`/staff/raffles/${parsed.data.releaseId}`);
   if (error || !data) back(parsed.data.releaseId, parsed.data.raffleId, { error: friendlyDbError(error) });
   back(parsed.data.releaseId, parsed.data.raffleId, {
-    ok: `The draw is done. ${data.entrants} ${data.entrants === 1 ? "person was" : "people were"} ranked, and the first ${data.winners} ${data.winners === 1 ? "is a winner" : "are winners"}.`,
+    ok: `The draw is done. ${data.entrants} ${data.entrants === 1 ? "person is" : "people are"} ranked. Start from #1 and press Pick.`,
   });
 }
 
-/** Owner / Manager: tells the next winners (how many is their choice), then sends the emails. */
+/** Owner / Manager: tells the picked people who haven't been told yet, then sends the emails. */
 export async function notifyWinnersAction(formData: FormData): Promise<void> {
   await requireEmployee(["owner", "manager"]);
   const parsed = ids.extend({ count: z.coerce.number().int().min(1).max(10000) }).safeParse({
@@ -91,7 +91,7 @@ export async function notifyWinnersAction(formData: FormData): Promise<void> {
   revalidatePath(`/staff/raffles/${parsed.data.releaseId}`);
   const manual = data.call_manually ? ` ${data.call_manually} need${data.call_manually === 1 ? "s" : ""} a phone call (marked "Call manually").` : "";
   back(parsed.data.releaseId, parsed.data.raffleId, {
-    ok: `${data.notified} winner${data.notified === 1 ? "" : "s"} notified.${manual}${describeSending(sending)}`,
+    ok: `${data.notified} ${data.notified === 1 ? "person" : "people"} told.${manual}${describeSending(sending)}`,
   });
 }
 
@@ -127,6 +127,34 @@ export async function winnerOutcomeAction(formData: FormData): Promise<void> {
   revalidatePath(`/staff/raffles/${parsed.data.releaseId}`);
   const done = { notified: "Marked as notified.", expired: "Marked as expired.", declined: "Marked as declined." }[parsed.data.outcome];
   back(parsed.data.releaseId, parsed.data.raffleId, error ? { error: friendlyDbError(error) } : { ok: done });
+}
+
+/** Staff: pick a person on the ranked list (they get the item; tell them next). */
+export async function pickPersonAction(formData: FormData): Promise<void> {
+  await requireEmployee();
+  const parsed = ids.extend({ resultId: z.uuid() }).safeParse({
+    releaseId: formData.get("releaseId"),
+    raffleId: formData.get("raffleId"),
+    resultId: formData.get("resultId"),
+  });
+  if (!parsed.success) redirect("/staff/raffles");
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("pick_raffle_person", { p_result_id: parsed.data.resultId });
+  revalidatePath(`/staff/raffles/${parsed.data.releaseId}`);
+  back(parsed.data.releaseId, parsed.data.raffleId, error ? { error: friendlyDbError(error) } : { ok: "Picked. Now tell them." });
+}
+
+/** Owner / Manager: stop entries now instead of waiting for the closing time. */
+export async function closeEntriesAction(formData: FormData): Promise<void> {
+  await requireEmployee(["owner", "manager"]);
+  const parsed = ids.safeParse({ releaseId: formData.get("releaseId"), raffleId: formData.get("raffleId") });
+  if (!parsed.success) redirect("/staff/raffles");
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("close_raffle_entries", { p_raffle_id: parsed.data.raffleId });
+  revalidatePath(`/staff/raffles/${parsed.data.releaseId}`);
+  back(parsed.data.releaseId, parsed.data.raffleId, error ? { error: friendlyDbError(error) } : { ok: "Entries are closed. You can draw now." });
 }
 
 /** Staff: offer the next person on the list when a winner expired or declined. Never a re-draw. */

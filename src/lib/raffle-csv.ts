@@ -43,7 +43,7 @@ function when(value: string | null): string {
 
 /** The ranked list as CSV (§10.4): position, name, member number, home store, entry method, outcome. */
 export function buildResultsCsv(rows: CsvResultRow[]): string {
-  const header = ["Position", "Winner", "Name", "Member number", "Home store", "Entered", "Outcome", "Told by", "Told at (New York)", "Choices (in order)", "Product given"];
+  const header = ["Position", "Picked", "Name", "Member number", "Home store", "Entered", "Outcome", "Told by", "Told at (New York)", "Choices (in order)", "Product given"];
   const lines = rows.map((r) =>
     [
       r.position,
@@ -52,7 +52,7 @@ export function buildResultsCsv(rows: CsvResultRow[]): string {
       r.memberNumber,
       r.homeStore,
       r.channel === "online" ? "Online" : r.channel === "in_store" ? "In store" : "",
-      r.isWinner ? r.outcome : "Not offered",
+      r.isWinner ? r.outcome : "Not picked",
       r.notifiedVia ?? "",
       when(r.notifiedAt),
       (r.choices ?? []).map((c, i) => `${i + 1}. ${c}`).join("; "),

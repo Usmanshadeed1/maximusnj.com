@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle2, Globe, Lock, Pencil, Rocket, Store, UserPlus } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Globe, Lock, Pencil, Store, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,10 +12,10 @@ import { searchCustomers, getStoreNameMap } from "@/server/customers";
 import { isEmailConfigured } from "@/server/email";
 import { getRaffleDetail, getStoresForRaffles } from "@/server/raffles";
 import { getSelectedStore } from "@/server/store-context";
-import { publishRaffleAction, enterMemberAction } from "@/server/actions/raffles";
+import { enterMemberAction } from "@/server/actions/raffles";
 import { CustomerSearch } from "../../../customers/customer-search";
 import { CancelRaffleDialog, RemoveEntryDialog } from "../../raffle-forms";
-import { DrawDialog } from "./result-dialogs";
+import { RaffleSteps } from "./raffle-steps";
 import { ResultsCard } from "./results-card";
 import { ChangeProductsDialog, EnterWithChoicesDialog } from "../../product-parts";
 import { getChoicesByEntry, getProducts, getRaffleProducts } from "@/server/products";
@@ -38,7 +38,6 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
   const pastEntries = entries.filter((e) => e.status !== "active");
   const message = typeof flags.error === "string" ? flags.error : null;
   const okMessage = typeof flags.ok === "string" ? flags.ok : null;
-  const canDraw = raffle.canManage && raffle.phase === "closed" && activeEntries.length > 0;
   const drawn = raffle.phase === "drawn" || raffle.phase === "completed";
 
   const [found, storeNames, stores, selectedStore] = await Promise.all([
@@ -78,7 +77,7 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
       {(flags.published === "1" || flags.saved === "1" || flags.entered === "1") && (
         <div role="status" className="mb-5 flex items-center gap-2 rounded-xl border border-success/30 bg-success/8 px-5 py-3.5 text-sm font-medium text-success">
           <CheckCircle2 aria-hidden className="size-4" />
-          {flags.published === "1" ? "The raffle is open. Members can see it and enter from its opening time." : flags.saved === "1" ? "Changes saved." : "Member entered."}
+          {flags.published === "1" ? "Published. Members can see the raffle and enter from its opening time." : flags.saved === "1" ? "Changes saved." : "Member entered."}
         </div>
       )}
 
@@ -95,16 +94,6 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
           </div>
           {raffle.canManage && (
             <div className="flex flex-wrap gap-2 sm:justify-end">
-              {raffle.status === "draft" && (
-                <form action={publishRaffleAction}>
-                  <input type="hidden" name="releaseId" value={releaseId} />
-                  <input type="hidden" name="raffleId" value={raffleId} />
-                  <Button type="submit" size="lg" variant="accent">
-                    <Rocket aria-hidden /> Open for entries
-                  </Button>
-                </form>
-              )}
-              {canDraw && <DrawDialog releaseId={releaseId} raffleId={raffleId} winners={raffle.winner_count} />}
               {editable && (
                 <Link href={`/staff/raffles/${releaseId}/${raffleId}/edit`} className={buttonVariants({ variant: "outline", size: "lg" })}>
                   <Pencil aria-hidden /> Edit
@@ -118,12 +107,11 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
         </div>
 
         <dl className="mt-5 grid gap-x-8 gap-y-4 border-t pt-5 sm:grid-cols-2">
-          <Detail label="Winners">{raffle.winner_count}</Detail>
           <Detail label="Collect within">{raffle.claim_deadline_hours} hours of winning</Detail>
           <Detail label="Opens">{formatBusinessDateTime(raffle.opens_at)}</Detail>
           <Detail label="Closes">{formatBusinessDateTime(raffle.closes_at)}</Detail>
           <Detail label="Pickup">{raffle.pickup_rule === "specific_store" ? (raffle.pickupName ?? "—") : PICKUP_TEXT[raffle.pickup_rule]}</Detail>
-          <Detail label="Winners are told by">{describeChannels(raffle.allowed_channels)}</Detail>
+          <Detail label="Picked people are told by">{describeChannels(raffle.allowed_channels)}</Detail>
         </dl>
         {raffle.status === "cancelled" && raffle.cancelled_reason && (
           <p className="mt-4 rounded-lg bg-muted px-4 py-3 text-sm">
@@ -137,6 +125,16 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
           </p>
         )}
       </Card>
+
+      <RaffleSteps
+        releaseId={releaseId}
+        raffleId={raffleId}
+        phase={raffle.phase}
+        canManage={raffle.canManage}
+        opensAt={raffle.opens_at}
+        closesAt={raffle.closes_at}
+        entries={activeEntries.length}
+      />
 
       <Card className="mt-6 p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -168,7 +166,6 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
           releaseId={releaseId}
           raffleId={raffleId}
           results={results}
-          winnerCount={raffle.winner_count}
           completed={raffle.phase === "completed"}
           canManage={raffle.canManage}
           stores={stores}

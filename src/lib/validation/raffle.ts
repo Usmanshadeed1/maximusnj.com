@@ -24,11 +24,6 @@ export const raffleSettingsSchema = z
     locationIds: z.array(z.uuid()).default([]),
     pickupRule: z.enum(["raffle_store", "home_store", "specific_store"]).default("raffle_store"),
     pickupLocationId: z.string().default(""),
-    winnerCount: z.coerce
-      .number("Enter the number of winners.")
-      .int("Use a whole number.")
-      .min(1, "At least 1 winner.")
-      .max(10000, "That is too many winners."),
     opensDate: date,
     opensTime: time,
     closesDate: date,
@@ -62,7 +57,6 @@ export const raffleSettingsSchema = z
     locationIds: v.scope === "store" ? v.locationIds : [],
     pickupRule: v.scope === "store" ? ("raffle_store" as const) : v.pickupRule,
     pickupLocationId: v.scope === "company" && v.pickupRule === "specific_store" ? v.pickupLocationId : null,
-    winnerCount: v.winnerCount,
     opensAt: nyWallTimeToInstant(v.opensDate, v.opensTime).toISOString(),
     closesAt: nyWallTimeToInstant(v.closesDate, v.closesTime).toISOString(),
     claimHours: v.claimHours,
@@ -86,7 +80,6 @@ export function raffleFormData(formData: FormData) {
     locationIds: formData.getAll("locationIds").map(String),
     pickupRule: String(formData.get("pickupRule") ?? "raffle_store"),
     pickupLocationId: String(formData.get("pickupLocationId") ?? ""),
-    winnerCount: String(formData.get("winnerCount") ?? ""),
     opensDate: String(formData.get("opensDate") ?? ""),
     opensTime: String(formData.get("opensTime") ?? ""),
     closesDate: String(formData.get("closesDate") ?? ""),

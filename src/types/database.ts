@@ -369,7 +369,7 @@ export type RaffleSummaryRow = {
   scope: RaffleScope;
   status: RaffleStatus;
   closes_at: string;
-  winner_count: number;
+  winner_count: number | null;
   entries: number;
   online: number;
   in_store: number;
@@ -406,7 +406,7 @@ export type RaffleRow = {
   location_id: string | null;
   pickup_rule: RafflePickupRule;
   pickup_location_id: string | null;
-  winner_count: number;
+  winner_count: number | null;
   opens_at: string;
   closes_at: string;
   claim_deadline_hours: number;
@@ -514,7 +514,7 @@ export type PortalRaffleJson = {
   store: string | null;
   pickup: string | null;
   pickup_rule: RafflePickupRule;
-  winners: number;
+  winners: number | null;
   opens_at: string;
   closes_at: string;
   phase: "upcoming" | "open" | "closed" | "drawn" | "completed" | "cancelled" | "draft";
@@ -541,7 +541,7 @@ export type KioskMemberViewJson = {
 type RaffleSetupArgs = {
   p_pickup_rule: RafflePickupRule;
   p_pickup_location_id: string | null;
-  p_winner_count: number;
+  p_winner_count: number | null;
   p_opens_at: string;
   p_closes_at: string;
   p_claim_hours: number;
@@ -809,6 +809,8 @@ export type Database = {
         Args: { p_from: string; p_to: string; p_location_id?: string | null };
         Returns: RaffleSummaryRow[];
       };
+      pick_raffle_person: { Args: { p_result_id: string }; Returns: unknown };
+      close_raffle_entries: { Args: { p_raffle_id: string }; Returns: unknown };
       draw_raffle: { Args: { p_raffle_id: string }; Returns: { entrants: number; winners: number } };
       notify_winners: {
         Args: { p_raffle_id: string; p_count?: number | null };

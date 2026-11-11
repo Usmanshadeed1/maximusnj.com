@@ -20,7 +20,7 @@ export const PHASE_INFO: Record<
   { label: string; variant: "success" | "secondary" | "accent" | "outline" | "destructive" | "default" }
 > = {
   draft: { label: "Draft", variant: "outline" },
-  upcoming: { label: "Opens soon", variant: "accent" },
+  upcoming: { label: "Published, opens soon", variant: "accent" },
   open: { label: "Open for entries", variant: "success" },
   closed: { label: "Closed", variant: "secondary" },
   drawn: { label: "Drawn", variant: "default" },

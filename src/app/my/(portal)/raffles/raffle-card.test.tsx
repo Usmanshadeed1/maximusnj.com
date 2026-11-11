@@ -32,11 +32,11 @@ const raffle = (overrides: Partial<PortalRaffle> = {}): PortalRaffle => ({
 const render = (r: PortalRaffle, active = true) => renderToStaticMarkup(<RaffleCard raffle={r} active={active} />);
 
 describe("RaffleCard", () => {
-  it("shows the release, the store, the winners and when it closes", () => {
+  it("shows the release, the store and when it closes (no winner count)", () => {
     const html = render(raffle());
     expect(html).toContain("Surging Sparks booster box");
     expect(html).toContain("Hoboken");
-    expect(html).toContain("<strong>3</strong> winners");
+    expect(html).not.toContain("winners</dd>");
     expect(html).toContain("Closes Dec 5, 2026");
     expect(html).toContain("Pay and pick up in store");
   });
@@ -93,7 +93,7 @@ describe("RaffleCard after the draw", () => {
   it("does not say won before they have been told", () => {
     const html = drawn({ state: "waiting" });
     expect(html).not.toContain("You won!");
-    expect(html).toContain("We&#x27;ll contact the winners soon");
+    expect(html).toContain("We&#x27;ll contact you if you&#x27;re picked");
   });
 
   it("covers every other result in plain words", () => {

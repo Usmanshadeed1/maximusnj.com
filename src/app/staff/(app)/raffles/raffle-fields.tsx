@@ -10,7 +10,6 @@ export type RaffleFieldValues = {
   locationIds: string[];
   pickupRule: RafflePickupRule;
   pickupLocationId: string;
-  winnerCount: string;
   opensDate: string;
   opensTime: string;
   closesDate: string;
@@ -175,11 +174,8 @@ export function RaffleFields({
       </Card>
 
       <Card className="p-5 sm:p-6">
-        <h2 className="text-base font-bold text-brand-navy-deep">Winners and pickup</h2>
+        <h2 className="text-base font-bold text-brand-navy-deep">Pickup</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Number of winners" htmlFor="winnerCount" error={errors.winnerCount} hint="How many units are available at each raffle.">
-            <Input id="winnerCount" name="winnerCount" type="number" inputMode="numeric" min={1} max={10000} value={v.winnerCount} onChange={(e) => set("winnerCount", e.target.value)} required />
-          </Field>
           <Field label="Hours to collect after winning" htmlFor="claimHours" error={errors.claimHours} hint="Winners pay and pick up in store within this time.">
             <Input id="claimHours" name="claimHours" type="number" inputMode="numeric" min={1} max={720} value={v.claimHours} onChange={(e) => set("claimHours", e.target.value)} required />
           </Field>

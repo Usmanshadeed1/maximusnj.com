@@ -9,13 +9,13 @@ import { idleState } from "@/lib/action-result";
 import { claimWinAction, drawRaffleAction } from "@/server/actions/raffle-results";
 
 /** The draw can't be undone, so it asks first. */
-export function DrawDialog({ releaseId, raffleId, winners }: { releaseId: string; raffleId: string; winners: number }) {
+export function DrawDialog({ releaseId, raffleId }: { releaseId: string; raffleId: string }) {
   return (
     <Dialog
       title="Run the draw?"
       trigger={(open) => (
         <Button size="lg" variant="accent" onClick={open}>
-          <Dices aria-hidden /> Draw winners
+          <Dices aria-hidden /> Draw
         </Button>
       )}
     >
@@ -23,7 +23,7 @@ export function DrawDialog({ releaseId, raffleId, winners }: { releaseId: string
         <input type="hidden" name="releaseId" value={releaseId} />
         <input type="hidden" name="raffleId" value={raffleId} />
         <p className="text-sm">
-          Everyone who entered is put in a random order. The first <strong>{winners}</strong> {winners === 1 ? "is the winner" : "are the winners"}, and the rest are kept in order in case someone can&apos;t collect.
+          Everyone who entered is put in a random order: 1, 2, 3… Then you go down the list from the top.
         </p>
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           This can only be done once. It can&apos;t be undone or run again.
@@ -134,15 +134,17 @@ export function ConfirmSubmitButton({
   message,
   children,
   variant = "outline",
+  size = "sm",
 }: {
   message: string;
   children: React.ReactNode;
   variant?: "outline" | "dangerOutline";
+  size?: "sm" | "lg";
 }) {
   return (
     <Button
       type="submit"
-      size="sm"
+      size={size}
       variant={variant}
       onClick={(e) => {
         if (!window.confirm(message)) e.preventDefault();

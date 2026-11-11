@@ -1,14 +1,13 @@
-import { Download, FlagTriangleRight, Mail, PhoneCall, Send, SkipForward } from "lucide-react";
+import { Download, FlagTriangleRight, Hand, Mail, PhoneCall, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/form";
 import { formatBusinessDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   completeRaffleAction,
-  nextInLineAction,
   notifyWinnersAction,
+  pickPersonAction,
   resendEmailsAction,
   winnerOutcomeAction,
 } from "@/server/actions/raffle-results";
@@ -43,12 +42,14 @@ function Hidden({ releaseId, raffleId }: { releaseId: string; raffleId: string }
   );
 }
 
-/** The ranked list after the draw, with everything staff do to winners (§10.4 to §10.6). */
+/**
+ * The ranked list after the draw (1, 2, 3… top to bottom). There is no fixed number of winners:
+ * staff go down the list, pick a person, tell them, then mark what happened.
+ */
 export function ResultsCard({
   releaseId,
   raffleId,
   results,
-  winnerCount,
   completed,
   canManage,
   stores,
@@ -60,7 +61,6 @@ export function ResultsCard({
   releaseId: string;
   raffleId: string;
   results: ResultView[];
-  winnerCount: number;
   completed: boolean;
   canManage: boolean;
   stores: { id: string; name: string }[];
@@ -71,9 +71,6 @@ export function ResultsCard({
   choices: Record<string, string[]>;
 }) {
   const productNames = new Map(products.map((p) => [p.id, p.name]));
-  const live = results.filter((r) => r.isWinner && ["pending", "notified", "claimed"].includes(r.outcome)).length;
-  const hasMoreOnList = results.some((r) => !r.isWinner);
-  const canPromote = !completed && live < winnerCount && hasMoreOnList;
   const unTold = results.filter((r) => r.isWinner && r.outcome === "pending" && r.notifyState === null).length;
   const emailsWaiting = results.some((r) => r.email && r.email.status !== "sent" && r.outcome === "notified");
   const unresolved = results.some((r) => r.isWinner && ["pending", "notified"].includes(r.outcome));
@@ -82,9 +79,9 @@ export function ResultsCard({
     <Card className="mt-6 p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-brand-navy-deep">Draw results</h2>
+          <h2 className="text-base font-bold text-brand-navy-deep">Ranked list</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {results.length} {results.length === 1 ? "person" : "people"} ranked. Winners are highlighted.
+            {results.length} {results.length === 1 ? "person" : "people"} in random order. Start from #1: press Pick, tell them, then mark what happened.
           </p>
         </div>
         {canManage && (
@@ -95,57 +92,40 @@ export function ResultsCard({
       </div>
 
       {!completed && (
-        <div className="mt-5 grid gap-3 rounded-xl bg-muted/60 p-4 sm:grid-cols-2">
-          {canManage && (
-            <form action={notifyWinnersAction} className="flex flex-col gap-2">
-              <Hidden releaseId={releaseId} raffleId={raffleId} />
-              <label htmlFor="notify-count" className="text-sm font-semibold">
-                Tell winners
-              </label>
-              <div className="flex gap-2">
-                <Input id="notify-count" name="count" type="number" min={1} max={10000} defaultValue={Math.max(unTold, 1)} className="w-24" aria-describedby="notify-help" />
-                <Button type="submit" disabled={unTold === 0}>
-                  <Send aria-hidden /> Notify
-                </Button>
-              </div>
-              <p id="notify-help" className="text-xs text-muted-foreground">
-                {unTold === 0
-                  ? "Every winner has been looked at."
-                  : `${unTold} winner${unTold === 1 ? " is" : "s are"} waiting to be told. Only methods the raffle allows and the member chose are used.`}
-                {!emailReady && " Email isn't set up yet, so emails will wait."}
-              </p>
-            </form>
-          )}
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold">A winner can&apos;t collect?</p>
-            <div className="flex flex-wrap gap-2">
-              <form action={nextInLineAction}>
+        <div className="mt-5 flex flex-col gap-3 rounded-xl bg-muted/60 p-4">
+          <div className="flex flex-wrap gap-2">
+            {canManage && (
+              <form action={notifyWinnersAction}>
                 <Hidden releaseId={releaseId} raffleId={raffleId} />
-                <Button type="submit" variant="outline" disabled={!canPromote}>
-                  <SkipForward aria-hidden /> Next in line
+                <input type="hidden" name="count" value={Math.max(unTold, 1)} />
+                <Button type="submit" disabled={unTold === 0}>
+                  <Send aria-hidden /> Tell picked people{unTold > 0 ? ` (${unTold})` : ""}
                 </Button>
               </form>
-              {emailsWaiting && (
-                <form action={resendEmailsAction}>
-                  <Hidden releaseId={releaseId} raffleId={raffleId} />
-                  <Button type="submit" variant="outline">
-                    <Mail aria-hidden /> Send emails again
-                  </Button>
-                </form>
-              )}
-              {canManage && (
-                <form action={completeRaffleAction}>
-                  <Hidden releaseId={releaseId} raffleId={raffleId} />
-                  <Button type="submit" variant="outline" disabled={unresolved}>
-                    <FlagTriangleRight aria-hidden /> Finish raffle
-                  </Button>
-                </form>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Mark a winner as expired or declined, then press Next in line. The same list is used, with no new draw.
-            </p>
+            )}
+            {emailsWaiting && (
+              <form action={resendEmailsAction}>
+                <Hidden releaseId={releaseId} raffleId={raffleId} />
+                <Button type="submit" variant="outline">
+                  <Mail aria-hidden /> Send emails again
+                </Button>
+              </form>
+            )}
+            {canManage && (
+              <form action={completeRaffleAction}>
+                <Hidden releaseId={releaseId} raffleId={raffleId} />
+                <Button type="submit" variant="outline" disabled={unresolved}>
+                  <FlagTriangleRight aria-hidden /> Finish raffle
+                </Button>
+              </form>
+            )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            {unTold === 0
+              ? "Picked people are told by the methods the raffle allows and they chose. Someone can't collect? Mark them expired or declined and pick the next person."
+              : `${unTold} picked ${unTold === 1 ? "person is" : "people are"} waiting to be told.`}
+            {!emailReady && " Email isn't set up yet, so emails will wait."}
+          </p>
         </div>
       )}
 
@@ -199,14 +179,22 @@ export function ResultsCard({
                         <span className="text-xs font-medium text-destructive">Email not sent: {r.email.error ?? "failed"}</span>
                       )}
                     </>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Next on the list</span>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
               {!completed && products.length > 0 && (
                 <AssignProductForm releaseId={releaseId} raffleId={raffleId} resultId={r.id} products={products} assignedId={r.assignedProductId} />
+              )}
+
+              {!completed && !r.isWinner && (
+                <form action={pickPersonAction}>
+                  <Hidden releaseId={releaseId} raffleId={raffleId} />
+                  <input type="hidden" name="resultId" value={r.id} />
+                  <Button type="submit" size="sm" variant="accent">
+                    <Hand aria-hidden /> Pick
+                  </Button>
+                </form>
               )}
 
               {acting && (
@@ -253,7 +241,7 @@ function OutcomeButton({
       <input type="hidden" name="resultId" value={resultId} />
       <input type="hidden" name="outcome" value={outcome} />
       {danger ? (
-        <ConfirmSubmitButton variant="dangerOutline" message={`Mark this winner as ${label.toLowerCase()}? This can't be undone.`}>
+        <ConfirmSubmitButton variant="dangerOutline" message={`Mark this person as ${label.toLowerCase()}? This can't be undone.`}>
           {label}
         </ConfirmSubmitButton>
       ) : (

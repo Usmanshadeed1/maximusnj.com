@@ -6,7 +6,6 @@ const STORE_B = "7f1c2b9e-4d2a-4c8e-9b1a-2f3e4d5c6b7b";
 const base = {
   scope: "store",
   locationIds: [STORE_A, STORE_B],
-  winnerCount: "3",
   opensDate: "2026-12-01",
   opensTime: "10:00",
   closesDate: "2026-12-05",
@@ -20,7 +19,7 @@ describe("raffleSettingsSchema", () => {
     const parsed = raffleSettingsSchema.parse(base);
     expect(parsed.opensAt).toBe("2026-12-01T15:00:00.000Z");
     expect(parsed.closesAt).toBe("2026-12-05T23:30:00.000Z");
-    expect(parsed.winnerCount).toBe(3);
+    expect(parsed).not.toHaveProperty("winnerCount");
     expect(parsed.pickupRule).toBe("raffle_store");
   });
 
@@ -55,9 +54,7 @@ describe("raffleSettingsSchema", () => {
     expect(result.error?.issues[0].path).toEqual(["closesDate"]);
   });
 
-  it("checks winners and the claim deadline", () => {
-    expect(raffleSettingsSchema.safeParse({ ...base, winnerCount: "0" }).success).toBe(false);
-    expect(raffleSettingsSchema.safeParse({ ...base, winnerCount: "2.5" }).success).toBe(false);
+  it("checks the claim deadline", () => {
     expect(raffleSettingsSchema.safeParse({ ...base, claimHours: "0" }).success).toBe(false);
     expect(raffleSettingsSchema.safeParse({ ...base, claimHours: "721" }).success).toBe(false);
   });

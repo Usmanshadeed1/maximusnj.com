@@ -107,10 +107,6 @@ export default async function ReleasePage({ params, searchParams }: PageProps<"/
                 </div>
                 <dl className="mt-3 grid gap-1.5 text-sm">
                   <div className="flex justify-between gap-3">
-                    <dt className="text-muted-foreground">Winners</dt>
-                    <dd className="font-semibold tabular-nums">{raffle.winner_count}</dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
                     <dt className="text-muted-foreground">Opens</dt>
                     <dd className="text-right font-medium">{formatBusinessDateTime(raffle.opens_at)}</dd>
                   </div>

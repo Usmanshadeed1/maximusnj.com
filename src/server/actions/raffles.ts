@@ -31,7 +31,8 @@ function setupArgs(input: z.output<typeof raffleSettingsSchema>) {
   return {
     p_pickup_rule: input.pickupRule,
     p_pickup_location_id: input.pickupLocationId,
-    p_winner_count: input.winnerCount,
+    // No "number of winners": the draw only ranks everyone (staff pick people from the top).
+    p_winner_count: null,
     p_opens_at: input.opensAt,
     p_closes_at: input.closesAt,
     p_claim_hours: input.claimHours,
@@ -134,7 +135,7 @@ export async function updateRaffleAction(_prev: ActionState, formData: FormData)
   redirect(`/staff/raffles/${ids.data.releaseId}/${ids.data.raffleId}?saved=1`);
 }
 
-/** Draft → open: members can see it, and entries are accepted between its opening and closing times. */
+/** Publish: members can see it, and entries are accepted between its opening and closing times. */
 export async function publishRaffleAction(formData: FormData): Promise<void> {
   await requireEmployee(["owner", "manager"]);
   const ids = z.object({ releaseId: z.uuid(), raffleId: z.uuid() }).safeParse({
