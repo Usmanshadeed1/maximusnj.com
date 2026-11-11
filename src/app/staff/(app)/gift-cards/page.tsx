@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ChevronRight, Gift, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,12 +18,15 @@ export default async function GiftCardsPage({ searchParams }: PageProps<"/staff/
   const { q } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const cards = await getGiftCards(query);
+  // A scanned (or fully typed) card number opens that card straight away.
+  const exact = query ? cards.find((c) => c.code.toUpperCase() === query.toUpperCase()) : undefined;
+  if (exact) redirect(`/staff/gift-cards/${exact.id}`);
 
   return (
     <div className="w-full max-w-4xl">
       <PageHeader
         title="Gift cards"
-        description="Find a card to record spending or add money."
+        description="Scan a gift card, or search by card number or the member's name, phone or email."
         actions={
           <Link href="/staff/gift-cards/new" className={buttonVariants({ size: "lg" })}>
             <Plus aria-hidden /> Sell a gift card
@@ -36,7 +40,7 @@ export default async function GiftCardsPage({ searchParams }: PageProps<"/staff/
         </label>
         <div className="relative flex-1">
           <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground" />
-          <Input id="q" name="q" defaultValue={query} placeholder="Gift card number, member name or member number" className="h-12 pl-11 text-base" autoComplete="off" />
+          <Input id="q" name="q" autoFocus defaultValue={query} placeholder="Card number, name, phone or email" className="h-12 pl-11 text-base" autoComplete="off" />
         </div>
         <Button type="submit" size="lg" variant="outline">
           Search

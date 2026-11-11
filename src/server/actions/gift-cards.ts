@@ -7,7 +7,26 @@ import { type ActionState, friendlyDbError } from "@/lib/action-result";
 import { parseMoneyToCents } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireEmployee } from "@/server/auth";
+import { searchCustomers } from "@/server/customers";
 import { getSelectedStore } from "@/server/store-context";
+
+export type MemberPick = { number: string; name: string; detail: string };
+
+/** Find a member by name, phone, email or member number (for the gift card forms). */
+export async function searchMembersAction(query: string): Promise<MemberPick[]> {
+  await requireEmployee();
+  const q = String(query ?? "").trim().slice(0, 100);
+  if (q.length < 2) return [];
+  const found = await searchCustomers(q);
+  return found
+    .filter((c) => !c.merged_into_id && c.status === "active")
+    .slice(0, 8)
+    .map((c) => ({
+      number: c.member_number,
+      name: `${c.first_name} ${c.last_name}`,
+      detail: [c.member_number, c.email, c.mobile_phone].filter(Boolean).join(" · "),
+    }));
+}
 
 const NO_STORE = "Choose the store you're working at first (top of the page).";
 
@@ -41,7 +60,6 @@ export async function sellGiftCardAction(_prev: ActionState, formData: FormData)
     p_location_id: store.id,
     p_paid_by_member: text(formData, "paidBy", 20) || null,
     p_holder_member: text(formData, "holder", 20) || null,
-    p_note: text(formData, "note", 300) || null,
   });
   if (error || !data) return { error: friendlyDbError(error) };
   revalidatePath("/staff/gift-cards");
@@ -63,7 +81,6 @@ export async function addToGiftCardAction(_prev: ActionState, formData: FormData
     p_amount_cents: amount.cents,
     p_location_id: store.id,
     p_paid_by_member: text(formData, "paidBy", 20) || null,
-    p_note: text(formData, "note", 300) || null,
   });
   if (error) return { error: friendlyDbError(error) };
   return done(id.data, "Money added.");
@@ -83,7 +100,6 @@ export async function spendGiftCardAction(_prev: ActionState, formData: FormData
     p_card_id: id.data,
     p_amount_cents: amount.cents,
     p_location_id: store.id,
-    p_note: text(formData, "note", 300) || null,
   });
   if (error) return { error: friendlyDbError(error) };
   return done(id.data, "Spending recorded.");

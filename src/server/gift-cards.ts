@@ -49,7 +49,7 @@ function toItem(r: CardRow): GiftCardListItem {
   };
 }
 
-/** Newest first; with a search, matches the card number or the holder's name / member number. */
+/** Newest first; with a search, matches the card number or the holder (name, phone, email or member number). */
 export async function getGiftCards(q: string): Promise<GiftCardListItem[]> {
   const supabase = await createSupabaseServerClient();
   const text = q.trim().replace(/[%_,()]/g, "");
@@ -58,11 +58,7 @@ export async function getGiftCards(q: string): Promise<GiftCardListItem[]> {
     return ((data ?? []) as unknown as CardRow[]).map(toItem);
   }
 
-  const { data: people } = await supabase
-    .from("customers")
-    .select("id")
-    .or(`first_name.ilike.%${text}%,last_name.ilike.%${text}%,member_number.ilike.%${text}%`)
-    .limit(50);
+  const { data: people } = await supabase.rpc("search_customers", { p_query: q.trim().slice(0, 100), p_limit: 50 });
   const ids = (people ?? []).map((p) => p.id);
   const filter = ids.length ? `code.ilike.%${text}%,customer_id.in.(${ids.join(",")})` : `code.ilike.%${text}%`;
   const { data } = await supabase.from("gift_cards").select(CARD_SELECT).or(filter).order("created_at", { ascending: false }).limit(50);

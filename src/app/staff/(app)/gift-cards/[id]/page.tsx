@@ -74,7 +74,7 @@ export default async function GiftCardPage({ params, searchParams }: PageProps<"
           </div>
         </div>
         <div className="p-5 sm:p-6">
-          <GiftCardActions cardId={card.id} active={card.active} holderNumber={card.holderNumber} />
+          <GiftCardActions cardId={card.id} active={card.active} holderNumber={card.holderNumber} holderName={card.holderName} />
         </div>
       </Card>
 
