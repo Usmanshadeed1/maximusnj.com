@@ -1,13 +1,12 @@
 "use server";
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { cleanMemberNumber } from "@/lib/kiosk";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /** What the home page shows after a PIN that did not sign anyone in. */
-export type HomePinOutcome = { error: string };
+export type HomePinOutcome = { error: string; to?: never } | { to: "/staff" | "/my"; error?: never };
 
 const MESSAGES = {
   inactive: "This membership isn't active. Please ask at the store.",
@@ -68,10 +67,10 @@ export async function homePinSignInAction(pin: string, memberNumber: string | nu
   const { error: verifyError } = await fresh.auth.verifyOtp({ email: data.email, token: otp, type: "email" });
   if (verifyError) return { error: MESSAGES.error };
 
-  if (data.kind === "staff") redirect("/staff");
+  if (data.kind === "staff") return { to: "/staff" };
 
   if (link.data.user?.id) {
     await admin.rpc("web_pin_link", { p_customer_id: data.customer_id, p_user_id: link.data.user.id });
   }
-  redirect("/my");
+  return { to: "/my" };
 }

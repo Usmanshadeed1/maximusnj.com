@@ -8,7 +8,7 @@ import { PortalNav } from "./portal-nav";
 /** Frame for the member pages: only a signed-in, linked member ever gets past this. */
 export default async function PortalLayout({ children }: LayoutProps<"/my">) {
   const access = await getMemberAccess();
-  if (access.status === "signed_out") redirect("/my/login");
+  if (access.status === "signed_out") redirect("/login");
   if (access.status === "needs_signup") redirect("/my/join");
   if (access.status !== "member") redirect("/my/help");
 
@@ -21,10 +21,10 @@ export default async function PortalLayout({ children }: LayoutProps<"/my">) {
           <form action={memberSignOutAction}>
             <button
               type="submit"
-              aria-label="Sign out"
-              className="grid size-11 place-items-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-white/25 px-4 text-sm font-semibold text-white transition hover:border-brand-yellow hover:bg-white/10"
             >
-              <LogOut aria-hidden className="size-5" />
+              <LogOut aria-hidden className="size-4" />
+              Log out
             </button>
           </form>
         </div>

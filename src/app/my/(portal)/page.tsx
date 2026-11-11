@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "My membership" };
 
 export default async function MemberHomePage({ searchParams }: PageProps<"/my">) {
   const [access, flags] = await Promise.all([getMemberAccess(), searchParams]);
-  if (access.status !== "member") redirect("/my/login");
+  if (access.status !== "member") redirect("/login");
   const { data } = access;
   const recent = mergeActivity(data).slice(0, 5);
 

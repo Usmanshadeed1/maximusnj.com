@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Join" };
 
 export default async function JoinPage() {
   const access = await getMemberAccess();
-  if (access.status === "signed_out") redirect("/my/login");
+  if (access.status === "signed_out") redirect("/login");
   if (access.status === "member") redirect("/my");
   if (access.status !== "needs_signup") redirect("/my/help");
 

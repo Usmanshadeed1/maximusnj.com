@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, KeyRound, Keyboard, Loader2, ScanLine } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -23,6 +24,7 @@ type Phase =
  * The PIN decides who you are (customer → member page, staff → dashboard). No visit is counted.
  */
 export function SignInScreen() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ type: "ready" });
   const [value, setValue] = useState("");
   const [cardError, setCardError] = useState<string | null>(null);
@@ -43,10 +45,14 @@ export function SignInScreen() {
     setPhase({ type: "checking" });
     try {
       const outcome = await homePinSignInAction(pin, card);
-      // Only comes back when the PIN did not sign anyone in (success moves to the next page).
-      if (outcome?.error) setPhase({ type: "pin", card, error: outcome.error, attempt: attempt + 1 });
+      if (outcome.to) {
+        // Signed in: keep the spinner showing while the next page opens.
+        router.replace(outcome.to);
+        router.refresh();
+        return;
+      }
+      setPhase({ type: "pin", card, error: outcome.error, attempt: attempt + 1 });
     } catch {
-      // A redirect after signing in also lands here in some browsers; only show an error if we stayed.
       setPhase({ type: "pin", card, error: "Something went wrong. Please try again.", attempt: attempt + 1 });
     }
   };

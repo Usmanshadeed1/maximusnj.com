@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Almost there" };
 /** Shown when an email can't be matched to exactly one member. The wording never says who is or isn't a member. */
 export default async function HelpPage() {
   const access = await getMemberAccess();
-  if (access.status === "signed_out") redirect("/my/login");
+  if (access.status === "signed_out") redirect("/login");
   if (access.status === "member") redirect("/my");
   if (access.status === "needs_signup") redirect("/my/join");
 

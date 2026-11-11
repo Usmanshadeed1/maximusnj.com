@@ -59,7 +59,7 @@ export default async function StaffAppLayout({ children }: { children: React.Rea
                 className="inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <LogOut aria-hidden className="size-4" />
-                <span className="hidden sm:inline">Sign out</span>
+                Log out
               </button>
             </form>
           </div>

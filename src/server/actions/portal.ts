@@ -64,13 +64,13 @@ export async function verifyLoginCodeAction(_prev: ActionState, formData: FormDa
 export async function memberSignOutAction(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect("/my/login");
+  redirect("/login");
 }
 
 /** Online sign-up (§5.2): only for a verified email that no member record uses. */
 export async function memberSignUpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await getMemberAccess();
-  if (access.status === "signed_out") redirect("/my/login");
+  if (access.status === "signed_out") redirect("/login");
   if (access.status === "member") redirect("/my");
   if (access.status !== "needs_signup") redirect("/my/help");
 
@@ -121,7 +121,7 @@ export async function setPinAction(pin: string, confirmPin: string): Promise<Act
 
 export async function setNotifyPrefsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await getMemberAccess();
-  if (access.status !== "member") redirect("/my/login");
+  if (access.status !== "member") redirect("/login");
 
   const parsed = notifyPrefsSchema.safeParse(formData.getAll("prefs").map(String));
   if (!parsed.success) return { error: "Choose from the options shown." };

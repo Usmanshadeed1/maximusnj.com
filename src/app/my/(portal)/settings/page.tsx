@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Settings" };
 
 export default async function MemberSettingsPage() {
   const access = await getMemberAccess();
-  if (access.status !== "member") redirect("/my/login");
+  if (access.status !== "member") redirect("/login");
   const { data } = access;
 
   return (

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Raffles" };
 
 export default async function MemberRafflesPage() {
   const access = await getMemberAccess();
-  if (access.status !== "member") redirect("/my/login");
+  if (access.status !== "member") redirect("/login");
   const raffles = await getPortalRaffles();
 
   // A win goes to the top.

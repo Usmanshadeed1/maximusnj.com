@@ -38,7 +38,7 @@ export async function signOutAction(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   (await cookies()).delete(STORE_COOKIE);
-  redirect("/staff/login");
+  redirect("/login");
 }
 
 /** Always answers the same way, so it never reveals whether an email has an account. */

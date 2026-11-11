@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
   const isPublicStaffPath = PUBLIC_STAFF_PATHS.some((p) => pathname.startsWith(p));
   if (pathname.startsWith("/staff") && !isPublicStaffPath && !signedIn) {
     const url = request.nextUrl.clone();
-    url.pathname = "/staff/login";
+    url.pathname = "/login";
     url.search = "";
     return NextResponse.redirect(url);
   }

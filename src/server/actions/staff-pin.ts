@@ -74,7 +74,7 @@ export async function kioskStaffSignInAction(formData: FormData): Promise<void> 
   await supabase.auth.signOut({ scope: "local" });
   const fresh = await createSupabaseServerClient();
   const { error: verifyError } = await fresh.auth.verifyOtp({ email, token: link.properties.email_otp, type: "email" });
-  if (verifyError) redirect("/staff/login");
+  if (verifyError) redirect("/login");
 
   const jar = await cookies();
   jar.delete({ name: KIOSK_COOKIE, path: "/" });
