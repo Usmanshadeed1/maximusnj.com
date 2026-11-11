@@ -125,7 +125,7 @@ export default async function NewTransactionPage({ searchParams }: PageProps<"/s
 
   return (
     <>
-      <PageHeader title="Record transaction" description="Who is this for? Search, or scan their member card." />
+      <PageHeader title="Record transaction" description="Who is this for? Search by name, phone, email or member number." />
       <CustomerSearch initialQuery={query} basePath={PAGE} />
 
       <Card className="overflow-hidden">

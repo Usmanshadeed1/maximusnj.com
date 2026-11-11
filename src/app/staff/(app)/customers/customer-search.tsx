@@ -78,7 +78,7 @@ export function CustomerSearch({
           autoFocus
           autoComplete="off"
           enterKeyHint="search"
-          placeholder="Search by name, phone, email or member number — or scan a card"
+          placeholder="Name, phone, email or member number"
           aria-busy={isPending}
           className="h-12 w-full rounded-lg border border-input bg-white pr-11 pl-11 text-base shadow-xs transition-[border-color,box-shadow] placeholder:text-muted-foreground hover:border-brand-navy/60 focus-visible:border-brand-blue focus-visible:ring-4 focus-visible:ring-brand-blue/20 focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
         />

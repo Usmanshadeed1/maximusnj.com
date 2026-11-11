@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock, Gift, Info, Loader2, LogOut, Sparkles, Ticket, Trophy } from "lucide-react";
+import { MemberCard } from "@/components/customers/member-card";
 import { RaffleCard } from "@/app/my/(portal)/raffles/raffle-card";
 import { TierBadge } from "@/components/tier-badge";
 import { TierProgress } from "@/components/tier-progress";
@@ -147,16 +148,9 @@ function MemberSummary({ view }: { view: KioskMemberView }) {
 
   return (
     <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy-deep p-6 text-white shadow-xl">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-semibold tracking-[0.25em] text-white/60 uppercase">Member</p>
-          <TierBadge tier={view.tier} label={view.tierLabel} tone="dark" className="px-4 py-1.5 text-sm" />
-        </div>
-        <p className="mt-6 text-2xl font-bold">
-          {view.firstName} {view.lastName}
-        </p>
-        <p className="mt-2 font-mono text-2xl font-semibold tracking-[0.18em] text-brand-yellow">{view.memberNumber}</p>
-        <p className="mt-3 text-sm text-white/70">Your tier for {formatMonthYear(view.month)}</p>
+      <div>
+        <MemberCard name={`${view.firstName} ${view.lastName}`} memberNumber={view.memberNumber} tier={{ key: view.tier, label: view.tierLabel }} />
+        <p className="mt-3 text-center text-sm text-muted-foreground">Your tier for {formatMonthYear(view.month)}</p>
       </div>
 
       <div className="rounded-3xl bg-white p-6 shadow-sm">

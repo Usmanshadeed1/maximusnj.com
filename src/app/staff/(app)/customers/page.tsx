@@ -34,7 +34,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/staff/
     <>
       <PageHeader
         title="Customers"
-        description="Find a member by name, phone, email or member number — or scan their card."
+        description="Find a member by name, phone, email or member number."
         actions={
           <Link href="/staff/customers/new" className={buttonVariants({ size: "lg" })}>
             <UserPlus aria-hidden /> Register customer

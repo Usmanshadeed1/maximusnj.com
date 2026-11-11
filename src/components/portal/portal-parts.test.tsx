@@ -66,12 +66,12 @@ function data(overrides: Partial<PortalData> = {}, spendCents = 18000, visits = 
 }
 
 describe("PortalMemberCard", () => {
-  it("shows the name and member number as text, plus the tier", () => {
+  it("shows the same card as the printed one: name, number, tier and barcode", () => {
     const html = renderToStaticMarkup(<PortalMemberCard data={data()} />);
     expect(html).toContain("Sol Solo");
     expect(html).toContain("MAX000123");
     expect(html).toContain("Base");
-    expect(html).not.toContain("<svg viewBox"); // no scannable barcode in the portal (Next release)
+    expect(html).toContain("<svg viewBox"); // the same barcode as the printed card
   });
 });
 

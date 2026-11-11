@@ -1,36 +1,15 @@
 import { Gem, ScanLine, ShoppingBag, Undo2 } from "lucide-react";
-import { Logo } from "@/components/brand/logo";
-import { TierBadge } from "@/components/tier-badge";
+import { MemberCard } from "@/components/customers/member-card";
 import { formatBusinessDate, formatBusinessDateTime, formatCents } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PortalData } from "@/server/portal";
 
-/** The member's card on screen: name and number as text (the scannable card is printed in store). */
+/** The member's card on screen: the same card as the printed one (logo and barcode). */
 export function PortalMemberCard({ data, className }: { data: PortalData; className?: string }) {
   return (
-    <section
-      aria-label="Your membership"
-      className={cn(
-        "relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-blue via-brand-navy to-brand-navy-deep p-6 text-white shadow-xl ring-1 ring-white/10 sm:p-8",
-        className,
-      )}
-    >
-      <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-brand-blue/50 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-12 size-64 rounded-full bg-brand-yellow/15 blur-3xl" />
-      <div className="relative flex items-start justify-between gap-3">
-        <Logo className="w-28 sm:w-32" />
-        <TierBadge tier={data.tier.key} label={data.tier.label} tone="dark" className="px-3.5 py-1.5 text-xs sm:text-sm" />
-      </div>
-      <div className="relative mt-10 sm:mt-12">
-        <p className="text-xs font-semibold tracking-[0.25em] text-white/60 uppercase">Member</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
-          {data.firstName} {data.lastName}
-        </p>
-        <p className="mt-3 font-mono text-2xl font-semibold tracking-[0.18em] text-brand-yellow sm:text-3xl">
-          {data.memberNumber}
-        </p>
-        <p className="mt-3 text-sm text-white/65">Member since {formatBusinessDate(data.memberSince)}</p>
-      </div>
+    <section aria-label="Your membership" className={cn("mx-auto w-full max-w-md", className)}>
+      <MemberCard name={`${data.firstName} ${data.lastName}`} memberNumber={data.memberNumber} tier={{ key: data.tier.key, label: data.tier.label }} />
+      <p className="mt-3 text-center text-sm text-muted-foreground">Member since {formatBusinessDate(data.memberSince)}</p>
     </section>
   );
 }

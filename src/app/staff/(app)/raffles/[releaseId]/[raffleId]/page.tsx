@@ -184,7 +184,7 @@ export default async function RafflePage({ params, searchParams }: PageProps<"/s
           </h2>
           {accepting ? (
             <>
-              <p className="mt-1 mb-4 text-sm text-muted-foreground">Scan their card or search by name, phone or email.</p>
+              <p className="mt-1 mb-4 text-sm text-muted-foreground">Search by name, phone, email or member number.</p>
               <CustomerSearch initialQuery={q} basePath={`/staff/raffles/${releaseId}/${raffleId}`} />
               {q && found.length === 0 && <p className="text-sm text-muted-foreground">No member found. Register them first, then come back.</p>}
               {found.length > 0 && (
