@@ -33,6 +33,15 @@ export async function proxy(request: NextRequest) {
     },
   });
 
+  // An email link that landed on the home page (Supabase falls back to the Site URL):
+  // finish it through the callback, which then opens "choose a new PIN".
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.searchParams.set("next", "/login/forgot/new-pin");
+    return NextResponse.redirect(url);
+  }
+
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);
   const { pathname } = request.nextUrl;

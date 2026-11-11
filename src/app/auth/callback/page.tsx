@@ -11,14 +11,17 @@ import { AuthShell } from "@/components/staff/auth-shell";
  * The page hands those to /auth/session, which signs in on the server, then continues
  * to `next` (default: choose a password).
  */
+const RESET_NEXT = "/login/forgot/new-pin";
+
 export default function AuthCallbackPage() {
   const [failed, setFailed] = useState(false);
+  const [forPin, setForPin] = useState(false);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const hash = new URLSearchParams(url.hash.slice(1));
     const next = url.searchParams.get("next") ?? "/staff/set-password";
-    const safeNext = next.startsWith("/staff/") ? next : "/staff/set-password";
+    const safeNext = next.startsWith("/staff/") || next === RESET_NEXT ? next : "/staff/set-password";
 
     // Remove tokens from the address bar and browser history right away.
     window.history.replaceState(null, "", url.pathname);
@@ -47,13 +50,24 @@ export default function AuthCallbackPage() {
     void finishSignIn().then((ok) => {
       // Full page load so the next page renders with the new session.
       if (ok) window.location.replace(safeNext);
-      else setFailed(true);
+      else {
+        setForPin(next === RESET_NEXT);
+        setFailed(true);
+      }
     });
   }, []);
 
   return (
     <AuthShell title={failed ? "Link expired" : "Signing you in…"}>
-      {failed ? (
+      {failed && forPin ? (
+        <p className="text-sm">
+          This link has expired or was already used.{" "}
+          <Link href="/login/forgot" className="font-medium text-brand-blue hover:underline">
+            Send a new link
+          </Link>
+          .
+        </p>
+      ) : failed ? (
         <p className="text-sm">
           This link has expired or was already used. Ask the Owner or your Manager for a new invite, or{" "}
           <Link href="/staff/forgot-password" className="font-medium text-brand-blue hover:underline">
