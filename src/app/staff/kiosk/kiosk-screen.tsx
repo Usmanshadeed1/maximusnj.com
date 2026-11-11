@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, KeyRound, Keyboard, LayoutDashboard, UserRound, Loader2, Lock, LogIn, ScanLine, ShieldCheck, Store, X, XCircle } from "lucide-react";
+import { CheckCircle2, KeyRound, LayoutDashboard, UserRound, Loader2, Lock, LogIn, ScanLine, ShieldCheck, Store, X, XCircle } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Button } from "@/components/ui/button";
+import { PinEntry } from "@/components/ui/pin-entry";
 import { BUSINESS_TIME_ZONE } from "@/lib/format";
 import { type KioskOutcome, cleanMemberNumber, kioskScreen, unknownPinMessage, wrongPinMessage } from "@/lib/kiosk";
 import { cn } from "@/lib/utils";
+import { PIN_MAX, PIN_MIN } from "@/lib/validation/portal";
 import { checkInAction, checkInByPinAction } from "@/server/actions/kiosk";
 import { kioskStaffCheckInAction, kioskStaffSignInAction } from "@/server/actions/staff-pin";
 import { KioskMemberPage } from "./kiosk-member-page";
@@ -18,14 +20,14 @@ import { StaffCredentialsForm } from "./staff-credentials-form";
 const RESULT_MS = 3000;
 const DEVICE_KEY = "mx_kiosk_device_id";
 const TIERS: TierKey[] = ["base", "silver", "gold", "diamond"];
+/** A half-typed PIN on the always-visible pad is cleared after this many seconds without touching. */
+const PIN_IDLE_SECONDS = 30;
 
 type Phase =
   | { type: "ready" }
   | { type: "checking" }
   /** The member has a PIN: waiting for it. `attempt` counts wrong tries (so the pad can shake). */
   | { type: "pin"; memberNumber: string; error: string | null; attempt: number }
-  /** No card: the member types their PIN on its own. */
-  | { type: "pinOnly"; error: string | null; attempt: number }
   /** An employee: check in, or go to the staff dashboard. */
   | { type: "staffChoice"; firstName: string; token: string }
   /** Checked in: the member sees their own page until they press Done. */
@@ -49,14 +51,16 @@ function readDeviceId(): string | null {
 /**
  * Full-screen entrance kiosk (PROJECT_SCOPE.md §6).
  * - A Bluetooth scanner "types" the number + Enter into the always-focused field.
- * - The on-screen keyboard only opens when someone taps the field (manual entry).
+ * - Without a card, people type their PIN on the number pad that is always on the screen.
  * - Result: full-screen green or red for 3 seconds, then ready for the next customer.
  * - Locks after `lockMinutes` without activity; staff credentials unlock it.
  */
 export function KioskScreen({ storeName, lockMinutes }: { storeName: string; lockMinutes: number }) {
   const [phase, setPhase] = useState<Phase>({ type: "ready" });
   const [value, setValue] = useState("");
-  const [manual, setManual] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinAttempt, setPinAttempt] = useState(0);
   const [locked, setLocked] = useState(false);
   const [staffPanel, setStaffPanel] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,8 +74,19 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
     if (resetTimer.current) clearTimeout(resetTimer.current);
     setPhase({ type: "ready" });
     setValue("");
-    setManual(false);
+    setPin("");
+    setPinError(null);
   }, []);
+
+  // Walk away mid-PIN → the pad clears, so the next person never sees half a PIN.
+  useEffect(() => {
+    if (!pin && !pinError) return;
+    const timer = setTimeout(() => {
+      setPin("");
+      setPinError(null);
+    }, PIN_IDLE_SECONDS * 1000);
+    return () => clearTimeout(timer);
+  }, [pin, pinError]);
 
   // Device id and activity tracking (for the idle lock).
   useEffect(() => {
@@ -140,6 +155,7 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
   /** PIN on its own (no card). */
   const runPin = async (pin: string, attempt: number) => {
     setPhase({ type: "checking" });
+    setPin("");
     let outcome: KioskOutcome;
     try {
       outcome = await checkInByPinAction(pin, deviceId.current);
@@ -147,7 +163,10 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
       outcome = { kind: "error" };
     }
     if (outcome.kind === "pin_not_found") {
-      setPhase({ type: "pinOnly", error: unknownPinMessage(outcome.attemptsLeft), attempt: attempt + 1 });
+      setPinError(unknownPinMessage(outcome.attemptsLeft));
+      setPinAttempt(attempt + 1);
+      setPin("");
+      setPhase({ type: "ready" });
       return;
     }
     if (outcome.kind === "staff_choice") {
@@ -199,79 +218,78 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
         </div>
       </header>
 
-      {/* Scan prompt */}
-      <section className="relative flex flex-1 flex-col items-center justify-center px-5 pb-10 text-center">
-        <span
-          aria-hidden
-          className="mb-8 grid size-28 place-items-center rounded-full bg-brand-yellow text-brand-navy-deep sm:size-32"
-          style={{ animation: "kiosk-pulse 2.4s ease-in-out infinite" }}
-        >
-          <ScanLine className="size-14 sm:size-16" strokeWidth={2.2} />
-        </span>
-        <p className="text-sm font-semibold tracking-[0.25em] text-brand-yellow uppercase sm:text-base">Welcome to Maximus</p>
-        <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-balance sm:text-6xl">Scan your member card</h1>
-        <p className="mt-4 text-lg text-white/70 sm:text-xl">Hold the barcode under the scanner, or type your number below.</p>
+      <section className="relative mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-5 pb-10 md:grid-cols-2 md:gap-14">
+        {/* Card: scan it */}
+        <div className="flex flex-col items-center text-center md:items-start md:text-left">
+          <span
+            aria-hidden
+            className="mb-7 grid size-24 place-items-center rounded-full bg-brand-yellow text-brand-navy-deep sm:size-28"
+            style={{ animation: "kiosk-pulse 2.4s ease-in-out infinite" }}
+          >
+            <ScanLine className="size-12 sm:size-14" strokeWidth={2.2} />
+          </span>
+          <p className="text-sm font-semibold tracking-[0.25em] text-brand-yellow uppercase sm:text-base">Welcome to Maximus</p>
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">Scan your member card</h1>
+          <p className="mt-4 text-lg text-white/70 sm:text-xl">Hold the barcode under the scanner.</p>
 
-        <form
-          className="mt-10 flex w-full max-w-xl flex-col gap-3 sm:flex-row"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void submit();
-          }}
-        >
-          <label htmlFor="member-number" className="sr-only">
-            Member number
-          </label>
-          <div className="relative flex-1">
+          {/* The scanner "types" the number + Enter here. Hidden, but always focused while waiting. */}
+          <form
+            className="absolute size-px overflow-hidden opacity-0"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
+            }}
+          >
+            <label htmlFor="member-number">Member number</label>
             <input
               ref={inputRef}
               id="member-number"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              onPointerDown={() => setManual(true)}
-              inputMode={manual ? "text" : "none"}
-              autoCapitalize="characters"
+              inputMode="none"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              enterKeyHint="go"
-              placeholder="MAX000000"
               disabled={!interactive}
-              className="h-16 w-full rounded-xl border-2 border-white/25 bg-white px-5 text-center font-mono text-2xl font-semibold tracking-[0.2em] text-brand-navy-deep uppercase shadow-lg placeholder:tracking-[0.2em] placeholder:text-slate-400 focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/40 focus:outline-none disabled:opacity-80"
+              tabIndex={-1}
             />
-            {!manual && (
-              <Keyboard
-                aria-hidden
-                className="pointer-events-none absolute top-1/2 right-4 size-6 -translate-y-1/2 text-slate-400"
-              />
-            )}
+          </form>
+        </div>
+
+        {/* No card: PIN pad, always on screen */}
+        <div className="mx-auto w-full max-w-md text-center">
+          <p className="flex items-center justify-center gap-2 text-2xl font-bold">
+            <KeyRound aria-hidden className="size-6 text-brand-yellow" /> No card? Type your PIN
+          </p>
+          <p className="mt-1 min-h-7 text-base" role="alert">
+            {pinError ? <span className="font-semibold text-red-300">{pinError}</span> : <span className="text-white/60">Then tap Check in.</span>}
+          </p>
+          {/* Taps on the pad must not take focus away from the hidden scan box. */}
+          <div className="mt-3 rounded-3xl bg-white p-5 text-foreground shadow-2xl" onPointerDown={(e) => e.preventDefault()}>
+            <PinEntry
+              key={pinAttempt}
+              value={pin}
+              onChange={(next) => {
+                setPin(next);
+                if (pinError) setPinError(null);
+              }}
+              minLength={PIN_MIN}
+              maxLength={PIN_MAX}
+              size="kiosk"
+              invalid={pinAttempt > 0 && !pin && Boolean(pinError)}
+              disabled={!interactive}
+              label="PIN"
+            />
           </div>
-          <Button type="submit" size="kiosk" variant="accent" disabled={!interactive || !value.trim()} className="h-16 text-xl">
+          <Button
+            variant="accent"
+            size="kiosk"
+            disabled={!interactive || pin.length < PIN_MIN}
+            onClick={() => void runPin(pin, pinAttempt)}
+            className="mt-4 h-16 w-full text-xl"
+          >
             Check in
           </Button>
-        </form>
-        {!manual && <p className="mt-3 text-sm text-white/50">Tap the box to type your number.</p>}
-
-        <div className="mt-8 flex w-full max-w-xl items-center gap-4 text-white/50" aria-hidden>
-          <span className="h-px flex-1 bg-white/20" />
-          <span className="text-sm font-semibold tracking-widest uppercase">or</span>
-          <span className="h-px flex-1 bg-white/20" />
-        </div>
-        <Button
-          type="button"
-          size="kiosk"
-          variant="outline"
-          disabled={!interactive}
-          onClick={() => setPhase({ type: "pinOnly", error: null, attempt: 0 })}
-          className="mt-6 h-16 w-full max-w-xl border-2 border-white/40 bg-white/10 text-xl text-white hover:bg-white/20 hover:text-white"
-        >
-          <KeyRound aria-hidden className="size-6" /> Check in with my PIN
-        </Button>
-
-        <div aria-hidden className="mt-14 hidden items-center gap-3 opacity-80 sm:flex">
-          {TIERS.map((tier) => (
-            <TierBadge key={tier} tier={tier} tone="dark" />
-          ))}
         </div>
       </section>
 
@@ -290,18 +308,6 @@ export function KioskScreen({ storeName, lockMinutes }: { storeName: string; loc
           error={phase.error}
           attempt={phase.attempt}
           onSubmit={(pin) => void run(phase.memberNumber, pin, phase.attempt)}
-          onCancel={backToReady}
-        />
-      )}
-
-      {/* PIN on its own (no card) */}
-      {phase.type === "pinOnly" && (
-        <KioskPin
-          key="pin-only"
-          title="Type your PIN"
-          error={phase.error}
-          attempt={phase.attempt}
-          onSubmit={(pin) => void runPin(pin, phase.attempt)}
           onCancel={backToReady}
         />
       )}
