@@ -65,7 +65,7 @@ export default async function GiftCardsPage({ searchParams }: PageProps<"/staff/
                   <div className="min-w-0 flex-1">
                     <p className="font-mono text-[15px] font-semibold tracking-wide">{c.code}</p>
                     <p className="truncate text-sm text-muted-foreground">
-                      {c.holderName ? `${c.holderName} · ${c.holderNumber}` : "Not connected to a member"}
+                      {c.holderName ? `Bought by ${c.holderName} · ${c.holderNumber}` : "Not bought by a member"}
                     </p>
                   </div>
                   {!c.active && <Badge variant="destructive">Off</Badge>}

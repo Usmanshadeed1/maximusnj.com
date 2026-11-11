@@ -317,9 +317,9 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
             </Link>
           )}
           <Card className="mt-3 p-5">
-            <h2 className="text-base font-bold text-brand-navy-deep">Gift cards</h2>
+            <h2 className="text-base font-bold text-brand-navy-deep">Gift cards bought</h2>
             {giftCards.length === 0 ? (
-              <p className="mt-1 text-sm text-muted-foreground">None connected to this member.</p>
+              <p className="mt-1 text-sm text-muted-foreground">None bought by this member.</p>
             ) : (
               <ul className="mt-3 divide-y rounded-lg border">
                 {giftCards.map((g) => (

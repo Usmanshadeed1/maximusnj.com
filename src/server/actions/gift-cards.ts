@@ -59,7 +59,6 @@ export async function sellGiftCardAction(_prev: ActionState, formData: FormData)
     p_amount_cents: amount.cents,
     p_location_id: store.id,
     p_paid_by_member: text(formData, "paidBy", 20) || null,
-    p_holder_member: text(formData, "holder", 20) || null,
   });
   if (error || !data) return { error: friendlyDbError(error) };
   revalidatePath("/staff/gift-cards");
@@ -144,15 +143,4 @@ export async function setGiftCardActiveAction(_prev: ActionState, formData: Form
   });
   if (error) return { error: error.message === "no_changes" ? (active ? "The card is already on." : "The card is already off.") : friendlyDbError(error) };
   return done(id.data, active ? "Card turned on." : "Card turned off.");
-}
-
-export async function setGiftCardMemberAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireEmployee();
-  const id = cardId(formData);
-  if (!id.success) return { error: "That gift card no longer exists." };
-
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("gift_card_set_member", { p_card_id: id.data, p_member_number: text(formData, "holder", 20) });
-  if (error) return { error: friendlyDbError(error) };
-  return done(id.data, text(formData, "holder", 20) ? "Connected to the member." : "No longer connected to a member.");
 }

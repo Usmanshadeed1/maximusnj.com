@@ -51,14 +51,14 @@ export default async function GiftCardPage({ params, searchParams }: PageProps<"
               <p className="mt-2 text-sm text-white/75">
                 {card.holderName ? (
                   <>
-                    For{" "}
+                    Bought by{" "}
                     <Link href={`/staff/customers/${card.holderId}`} className="font-semibold text-white underline-offset-4 hover:underline">
                       {card.holderName}
                     </Link>{" "}
                     · {card.holderNumber}
                   </>
                 ) : (
-                  "Not connected to a member"
+                  "Not bought by a member"
                 )}
               </p>
             </div>
@@ -74,7 +74,7 @@ export default async function GiftCardPage({ params, searchParams }: PageProps<"
           </div>
         </div>
         <div className="p-5 sm:p-6">
-          <GiftCardActions cardId={card.id} active={card.active} holderNumber={card.holderNumber} holderName={card.holderName} />
+          <GiftCardActions cardId={card.id} active={card.active} />
         </div>
       </Card>
 

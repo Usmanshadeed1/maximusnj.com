@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
-import { Link2, Loader2, Minus, Plus, Power, Search, UserRound, Wrench, X } from "lucide-react";
+import { Loader2, Minus, Plus, Power, Search, UserRound, Wrench, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, useDialog } from "@/components/ui/dialog";
 import { Field, FormMessage, Input, SubmitButton } from "@/components/ui/form";
@@ -11,7 +11,6 @@ import {
   fixGiftCardAction,
   sellGiftCardAction,
   setGiftCardActiveAction,
-  setGiftCardMemberAction,
   spendGiftCardAction,
   type MemberPick,
   searchMembersAction,
@@ -41,15 +40,13 @@ function MemberField({
   label,
   hint,
   error,
-  initial,
 }: {
   name: string;
   label: string;
   hint: string;
   error?: string[];
-  initial?: { number: string; name: string } | null;
 }) {
-  const [picked, setPicked] = useState<{ number: string; name: string } | null>(initial ?? null);
+  const [picked, setPicked] = useState<{ number: string; name: string } | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MemberPick[]>([]);
   const [searching, setSearching] = useState(false);
@@ -178,12 +175,6 @@ export function SellGiftCardForm() {
         hint="If a member pays, it counts toward their tier, like a normal purchase."
         error={errors.paidBy}
       />
-      <MemberField
-        name="holder"
-        label="Who is it for? (optional)"
-        hint="They'll see the balance on their member page. Empty = the person who paid, or nobody."
-        error={errors.holder}
-      />
       <div className="flex justify-end">
         <SubmitButton size="lg" pendingText="Saving…">
           Sell gift card
@@ -229,17 +220,7 @@ function DialogForm({
 }
 
 /** Everything staff can do with one card. */
-export function GiftCardActions({
-  cardId,
-  active,
-  holderNumber,
-  holderName,
-}: {
-  cardId: string;
-  active: boolean;
-  holderNumber: string | null;
-  holderName: string | null;
-}) {
+export function GiftCardActions({ cardId, active }: { cardId: string; active: boolean }) {
   return (
     <div className="flex flex-wrap gap-2">
       <Dialog
@@ -301,28 +282,6 @@ export function GiftCardActions({
                 <Input id="reason" name="reason" maxLength={300} placeholder="e.g. Typed $50 instead of $5" required />
               </Field>
             </>
-          )}
-        </DialogForm>
-      </Dialog>
-
-      <Dialog
-        title={holderNumber ? "Change the member" : "Connect to a member"}
-        description="The member sees this card's balance on their member page. Remove the member to disconnect."
-        trigger={(open) => (
-          <Button size="lg" variant="outline" onClick={open}>
-            <Link2 aria-hidden /> {holderNumber ? "Change member" : "Connect to member"}
-          </Button>
-        )}
-      >
-        <DialogForm action={setGiftCardMemberAction} cardId={cardId} submitLabel="Save">
-          {(errors) => (
-            <MemberField
-              name="holder"
-              label="Member"
-              hint="Nobody picked = not connected to anyone."
-              error={errors.holder}
-              initial={holderNumber && holderName ? { number: holderNumber, name: holderName } : null}
-            />
           )}
         </DialogForm>
       </Dialog>
