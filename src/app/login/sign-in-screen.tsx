@@ -131,16 +131,9 @@ export function SignInScreen() {
           <KeyRound aria-hidden className="size-6" /> Sign in with my PIN
         </Button>
 
-        <p className="mt-8 text-sm text-white/60">
-          No PIN yet?{" "}
-          <Link href="/my/login" className="font-semibold text-white underline-offset-4 hover:underline">
-            Sign in with email
-          </Link>
-          <span aria-hidden className="mx-2">·</span>
-          <Link href="/staff/login" className="font-semibold text-white underline-offset-4 hover:underline">
-            Staff password
-          </Link>
-        </p>
+        <Link href="/login/forgot" className="mt-8 text-base font-semibold text-white/80 underline-offset-4 hover:text-white hover:underline">
+          Forgot your PIN or card?
+        </Link>
 
         <div aria-hidden className="mt-10 hidden items-center gap-3 opacity-80 sm:flex">
           {TIERS.map((tier) => (

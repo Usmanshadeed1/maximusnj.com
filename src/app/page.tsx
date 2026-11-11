@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogIn, ScanLine, Ticket, TrendingUp, UserRound } from "lucide-react";
+import { LogIn, ScanLine, Ticket, TrendingUp } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { TierBadge, type TierKey } from "@/components/tier-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,23 +60,13 @@ export default async function HomePage() {
         {/* Top bar: logo left, sign-in right */}
         <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:pt-8">
           <Logo priority className="w-28 sm:w-44" />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/login"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-brand-yellow px-4 text-sm font-semibold text-brand-navy-deep transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-            >
-              <UserRound aria-hidden className="size-4" />
-              Member login
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-11 items-center gap-2 rounded-md border border-white/30 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-brand-yellow hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-            >
-              <LogIn aria-hidden className="size-4" />
-              <span className="sm:hidden">Staff</span>
-              <span className="hidden sm:inline">Staff log in</span>
-            </Link>
-          </div>
+          <Link
+            href="/login"
+            className="inline-flex h-11 items-center gap-2 rounded-md bg-brand-yellow px-5 text-sm font-semibold text-brand-navy-deep transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+          >
+            <LogIn aria-hidden className="size-4" />
+            Login
+          </Link>
         </header>
 
         <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-14 pb-20 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:pt-20 lg:pb-28">
