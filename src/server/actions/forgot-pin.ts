@@ -54,8 +54,8 @@ export async function resetWho(): Promise<ResetWho | "signed_out" | "unknown"> {
 }
 
 /** Forgot PIN or card, step 2: save the new PIN and go to the right place. */
-export async function saveNewPinAction(pin: string): Promise<ActionState> {
-  const parsed = setPinSchema.safeParse({ pin, confirmPin: pin });
+export async function saveNewPinAction(pin: string, confirmPin: string): Promise<ActionState> {
+  const parsed = setPinSchema.safeParse({ pin, confirmPin });
   if (!parsed.success) return validationFailed(parsed.error);
 
   const who = await resetWho();
